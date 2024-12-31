@@ -16,7 +16,6 @@ libseccomp = "0.3.0"
 nix = { version = "0.29.0", features = ["fs", "process", "resource", "signal"] }
 quickcheck_macros = "1.0.0"
 thiserror = "2.0.9"
-tokio = { version = "1.42.0", features = ["full"] }
 
 [dev-dependencies]
 anyhow = "1.0.95"

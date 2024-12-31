@@ -1,7 +1,14 @@
 [package]
 name = "code-executor"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/akagiyuu/code-executor"
+homepage = "https://github.com/akagiyuu/code-executor"
+description = """
+A library designed for the backend of competitive programming platforms
+"""
 
 [dependencies]
 bon = "3.3.2"

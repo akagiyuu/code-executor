@@ -96,6 +96,23 @@ pub const JAVA_RUNNER: Runner = Runner {
     },
 };
 
+pub const RUST_RUNNER: Runner = Runner {
+    main_file: "main.rs",
+    compiler_args: Some(CommandArgs {
+        binary: "rustc",
+        args: &["-o", "main.rs"],
+    }),
+    sandbox_config: sandbox::Config {
+        scmp_black_list: DEFAULT_SCMP_BLACK_LIST,
+        rlimit_configs: DEFAULT_RLIMIT_CONFIGS,
+        time_limit: Duration::from_secs(2),
+        args: CommandArgs {
+            binary: "./main",
+            args: &[],
+        },
+    },
+};
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;

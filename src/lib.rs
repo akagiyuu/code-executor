@@ -1,9 +1,3 @@
-#[cfg(test)]
-extern crate quickcheck;
-#[cfg(test)]
-#[macro_use(quickcheck)]
-extern crate quickcheck_macros;
-
 mod error;
 pub mod runner;
 mod sandbox;
@@ -108,6 +102,7 @@ mod tests {
     use std::{fs, io::Write};
 
     use anyhow::{Error, Result};
+    use rstest::rstest;
     use tempfile::NamedTempFile;
 
     use crate::{
@@ -140,19 +135,25 @@ mod tests {
         Ok(())
     }
 
-    #[quickcheck]
-    fn test_add(a: u64, b: u64) -> Result<()> {
+    const RANDOM_ITER: usize = 10;
+
+    #[rstest]
+    fn test_add(#[values(CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner) -> Result<()> {
         const CODE_PATH: &str = "test/add";
 
         let code_path = Path::new(CODE_PATH);
-        let mut input = NamedTempFile::new()?;
-        input.write_fmt(format_args!("{}\n{}\n", a, b))?;
+        let code = read_code(code_path, &runner)?;
 
-        for runner in [CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER] {
-            let code = read_code(code_path, &runner)?;
+        for _ in 0..RANDOM_ITER {
+            let [a, b]: [i16; 2] = rand::random();
+            let mut input = NamedTempFile::new()?;
+            input.write_fmt(format_args!("{}\n{}\n", a, b))?;
 
             let metrics = runner.run(&code, input.path()).unwrap();
-            assert_eq!(metrics.output, runner::Output::Success((a + b).to_string()));
+            assert_eq!(
+                metrics.output,
+                runner::Output::Success((a as i32 + b as i32).to_string())
+            );
         }
 
         Ok(())

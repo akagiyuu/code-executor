@@ -71,26 +71,28 @@ impl Runner<'_> {
     pub fn run(
         &self,
         code: impl AsRef<str>,
-        input_path: impl AsRef<Path>,
-    ) -> Result<runner::metrics::Metrics> {
-        let project_path = self.create_unique_project(code.as_ref())?;
-        let output_path =
-            project_path.join(util::hash((input_path.as_ref(), "output")).to_string());
-        let error_path = project_path.join(util::hash((input_path.as_ref(), "error")).to_string());
+        input_paths: &[impl AsRef<Path>],
+    ) -> impl Iterator<Item = Result<metrics::Metrics>> {
+        let project_path = self.create_unique_project(code.as_ref())?.as_ref();
 
         self.compile(&project_path)?;
 
-        let sandbox = Sandbox::builder()
-            .project_path(project_path)
-            .config(self.sandbox_config.clone())
-            .input(input_path.as_ref())?
-            .output_path(&output_path)
-            .error_path(&error_path)
-            .build();
+        input_paths.iter().map(|input_path| {
+            let output_path =
+                project_path.join(util::hash((input_path.as_ref(), "output")).to_string());
+            let error_path =
+                project_path.join(util::hash((input_path.as_ref(), "error")).to_string());
 
-        let sandbox = sandbox.spawn()?;
-        let result = sandbox.wait()?;
+            let sandbox = Sandbox::builder()
+                .project_path(project_path)
+                .config(self.sandbox_config.clone())
+                .input(input_path.as_ref())?
+                .output_path(&output_path)
+                .error_path(&error_path)
+                .build();
 
-        Ok(result)
+            let sandbox = sandbox.spawn()?;
+            sandbox.wait()
+        })
     }
 }

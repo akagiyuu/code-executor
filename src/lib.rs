@@ -100,7 +100,7 @@ pub const RUST_RUNNER: Runner = Runner {
     main_file: "main.rs",
     compiler_args: Some(CommandArgs {
         binary: "rustc",
-        args: &["-o", "main.rs"],
+        args: &["-O", "main.rs"],
     }),
     sandbox_config: sandbox::Config {
         scmp_black_list: DEFAULT_SCMP_BLACK_LIST,
@@ -122,6 +122,7 @@ mod tests {
     use rstest::rstest;
     use tempfile::NamedTempFile;
 
+    use crate::RUST_RUNNER;
     use crate::{
         CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER,
         runner::{self, Runner},
@@ -131,23 +132,23 @@ mod tests {
         fs::read_to_string(problem_path.join(runner.main_file)).map_err(Error::from)
     }
 
-    #[test]
-    fn test_hello_world() -> Result<()> {
+    #[rstest]
+    fn test_hello_world(
+        #[values(CPP_RUNNER, RUST_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner,
+    ) -> Result<()> {
         const CODE_PATH: &str = "test/hello-world";
         const CORRECT_OUTPUT: &str = "Hello World";
 
         let code_path = Path::new(CODE_PATH);
         let input = NamedTempFile::new()?;
 
-        for runner in [CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER] {
-            let code = read_code(code_path, &runner)?;
+        let code = read_code(code_path, &runner)?;
 
-            let metrics = runner.run(&code, input.path()).unwrap();
-            assert_eq!(
-                metrics.output,
-                runner::Output::Success(CORRECT_OUTPUT.to_string())
-            );
-        }
+        let metrics = runner.run(&code, input.path())?;
+        assert_eq!(
+            metrics.output,
+            runner::Output::Success(CORRECT_OUTPUT.to_string())
+        );
 
         Ok(())
     }
@@ -155,7 +156,7 @@ mod tests {
     const RANDOM_ITER: usize = 10;
 
     #[rstest]
-    fn test_add(#[values(CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner) -> Result<()> {
+    fn test_add(#[values(CPP_RUNNER, RUST_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner) -> Result<()> {
         const CODE_PATH: &str = "test/add";
 
         let code_path = Path::new(CODE_PATH);

@@ -144,7 +144,7 @@ mod tests {
 
         let code = read_code(code_path, &runner)?;
 
-        let metrics = runner.run(&code, input.path())?;
+        let metrics = &runner.run(&code, &[input.path()]).unwrap()[0];
         assert_eq!(
             metrics.output,
             runner::Output::Success(CORRECT_OUTPUT.to_string())
@@ -153,25 +153,31 @@ mod tests {
         Ok(())
     }
 
-    const RANDOM_ITER: usize = 10;
+    const RANDOM_ITER: usize = 100;
 
     #[rstest]
-    fn test_add(#[values(CPP_RUNNER, RUST_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner) -> Result<()> {
+    fn test_add(
+        #[values(CPP_RUNNER, RUST_RUNNER, JAVA_RUNNER, PYTHON_RUNNER)] runner: Runner,
+    ) -> Result<()> {
         const CODE_PATH: &str = "test/add";
 
         let code_path = Path::new(CODE_PATH);
         let code = read_code(code_path, &runner)?;
 
-        for _ in 0..RANDOM_ITER {
-            let [a, b]: [i16; 2] = rand::random();
-            let mut input = NamedTempFile::new()?;
-            input.write_fmt(format_args!("{}\n{}\n", a, b))?;
+        let (inputs, outputs): (Vec<_>, Vec<_>) = (0..RANDOM_ITER)
+            .map(|_| {
+                let [a, b]: [i16; 2] = rand::random();
+                let mut input = NamedTempFile::new().unwrap();
+                input.write_fmt(format_args!("{}\n{}\n", a, b)).unwrap();
+                (input, a as i32 + b as i32)
+            })
+            .unzip();
 
-            let metrics = runner.run(&code, input.path()).unwrap();
-            assert_eq!(
-                metrics.output,
-                runner::Output::Success((a as i32 + b as i32).to_string())
-            );
+        let test_cases: Vec<_> = inputs.iter().map(|input| input.path()).collect();
+
+        let metrics_list = runner.run(&code, &test_cases).unwrap();
+        for (metrics, output) in metrics_list.into_iter().zip(outputs.into_iter()) {
+            assert_eq!(metrics.output, runner::Output::Success(output.to_string()));
         }
 
         Ok(())

@@ -1,10 +1,7 @@
 mod metrics;
 
 use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
+    fs, io::Write, path::{Path, PathBuf}, process::{Command, Stdio}
 };
 
 pub use metrics::*;
@@ -23,7 +20,7 @@ pub struct Runner<'a> {
 }
 
 impl Runner<'_> {
-    pub fn init_project(&self, code: &str) -> Result<PathBuf> {
+    fn create_project(&self, code: &str) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
         fs::create_dir_all(&project_path)?;
@@ -41,18 +38,20 @@ impl Runner<'_> {
         Ok(project_path)
     }
 
-    pub fn compile(&self, project_path: &Path) -> Result<()> {
+    pub fn compile(&self, code: &str) -> Result<PathBuf> {
+        let project_path = self.create_project(code)?;
+
         let Some(CommandArgs {
             binary: compiler,
             args,
         }) = self.compiler_args
         else {
-            return Ok(());
+            return Ok(project_path);
         };
 
         let process = Command::new(compiler)
             .args(args)
-            .current_dir(project_path)
+            .current_dir(&project_path)
             .stderr(Stdio::piped())
             .spawn()?;
 
@@ -64,7 +63,7 @@ impl Runner<'_> {
             });
         }
 
-        Ok(())
+        Ok(project_path)
     }
 
     pub fn run(&self, project_path: &Path, input_path: &Path) -> Result<metrics::Metrics> {

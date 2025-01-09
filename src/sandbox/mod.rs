@@ -147,7 +147,7 @@ impl Sandbox<'_, Running> {
             return Err(Error::Runtime { message: error });
         }
 
-        let output = fs::read_to_string(self.output_path)?;
+        let output = fs::read_to_string(self.output_path)?.trim().to_string();
         Ok(runner::Metrics {
             exit_status: status,
             exit_signal: WTERMSIG(status),

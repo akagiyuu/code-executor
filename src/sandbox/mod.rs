@@ -37,13 +37,7 @@ pub struct Sandbox<'a, State = Init> {
 
     output_path: &'a Path,
 
-    #[builder(default = fs::OpenOptions::new().create(true).truncate(true).write(true).open(output_path).unwrap())]
-    output: File,
-
     error_path: &'a Path,
-
-    #[builder(default = fs::OpenOptions::new().create(true).truncate(true).write(true).open(error_path).unwrap())]
-    error: File,
 
     #[builder(default = -1)]
     child_pid: i32,
@@ -60,11 +54,21 @@ impl<'a> Sandbox<'a, Init> {
         let stdin_raw_fd = io::stdin().as_raw_fd();
         dup2(self.input.as_raw_fd(), stdin_raw_fd)?;
 
+        let output = fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(self.output_path)?;
         let stdout_raw_fd = io::stdout().as_raw_fd();
-        dup2(self.output.as_raw_fd(), stdout_raw_fd)?;
+        dup2(output.as_raw_fd(), stdout_raw_fd)?;
 
+        let error = fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(self.error_path)?;
         let sterr_raw_fd = io::stderr().as_raw_fd();
-        dup2(self.error.as_raw_fd(), sterr_raw_fd)?;
+        dup2(error.as_raw_fd(), sterr_raw_fd)?;
 
         Ok(())
     }
@@ -91,9 +95,7 @@ impl<'a> Sandbox<'a, Init> {
                 project_path: self.project_path,
                 input: self.input,
                 output_path: self.output_path,
-                output: self.output,
                 error_path: self.error_path,
-                error: self.error,
                 child_pid: child.as_raw(),
                 begin_time: now,
                 state: PhantomData::<Running>,

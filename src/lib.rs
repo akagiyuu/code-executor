@@ -119,13 +119,14 @@ mod tests {
     use std::{fs, io::Write};
 
     use anyhow::{Error, Result};
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
     use rstest::rstest;
     use tempfile::NamedTempFile;
 
     use crate::RUST_RUNNER;
     use crate::{
         CPP_RUNNER, JAVA_RUNNER, PYTHON_RUNNER,
-        runner::{self, Runner},
+        runner::{Runner},
     };
 
     fn read_code(problem_path: &Path, runner: &Runner<'_>) -> Result<String> {
@@ -144,11 +145,13 @@ mod tests {
 
         let code = read_code(code_path, &runner)?;
 
-        let metrics = &runner.run(&code, &[input.path()]).unwrap()[0];
-        assert_eq!(
-            metrics.output,
-            runner::Output::Success(CORRECT_OUTPUT.to_string())
-        );
+        let project_path = runner.compile(&code)?;
+        let metrics = runner.run(&project_path, input.path());
+
+        assert!(metrics.is_ok());
+        let metrics = metrics.unwrap();
+
+        assert_eq!(metrics.output.as_str(), CORRECT_OUTPUT);
 
         Ok(())
     }
@@ -164,21 +167,19 @@ mod tests {
         let code_path = Path::new(CODE_PATH);
         let code = read_code(code_path, &runner)?;
 
-        let (inputs, outputs): (Vec<_>, Vec<_>) = (0..RANDOM_ITER)
-            .map(|_| {
-                let [a, b]: [i16; 2] = rand::random();
-                let mut input = NamedTempFile::new().unwrap();
-                input.write_fmt(format_args!("{}\n{}\n", a, b)).unwrap();
-                (input, a as i32 + b as i32)
-            })
-            .unzip();
+        let project_path = &runner.compile(&code)?;
 
-        let test_cases: Vec<_> = inputs.iter().map(|input| input.path()).collect();
+        (0..RANDOM_ITER).into_par_iter().for_each(|_| {
+            let [a, b]: [i16; 2] = rand::random();
+            let mut input = NamedTempFile::new().unwrap();
+            input.write_fmt(format_args!("{}\n{}\n", a, b)).unwrap();
 
-        let metrics_list = runner.run(&code, &test_cases).unwrap();
-        for (metrics, output) in metrics_list.into_iter().zip(outputs.into_iter()) {
-            assert_eq!(metrics.output, runner::Output::Success(output.to_string()));
-        }
+            let metrics = runner.run(project_path, input.path());
+            assert!(metrics.is_ok());
+            let metrics = metrics.unwrap();
+
+            assert_eq!(metrics.output, (a as i32 + b as i32).to_string());
+        });
 
         Ok(())
     }

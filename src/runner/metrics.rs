@@ -58,19 +58,6 @@ impl From<rusage> for Rusage {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Output {
-    CompileTimeError(String),
-    RunTimeError(String),
-    Success(String),
-}
-
-impl Default for Output {
-    fn default() -> Self {
-        Output::CompileTimeError(Default::default())
-    }
-}
-
 #[derive(Debug, Default)]
 pub struct Metrics {
     pub exit_status: c_int,
@@ -78,5 +65,5 @@ pub struct Metrics {
     pub exit_code: c_int,
     pub real_time_cost: Duration,
     pub resource_usage: Rusage,
-    pub output: Output,
+    pub output: String,
 }

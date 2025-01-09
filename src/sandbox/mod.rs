@@ -16,7 +16,7 @@ use nix::unistd::{ForkResult, alarm, dup2, execvp, fork};
 
 pub use config::*;
 
-use crate::{CommandArgs, Result, runner};
+use crate::{CommandArgs, Error, Result, runner};
 
 extern "C" fn signal_handler(_: nix::libc::c_int) {}
 
@@ -142,15 +142,12 @@ impl Sandbox<'_, Running> {
             wait4(self.child_pid, &mut status, WSTOPPED, &mut usage);
         }
 
-        let output = fs::read_to_string(self.output_path)?;
         let error = fs::read_to_string(self.error_path)?;
+        if !error.is_empty() {
+            return Err(Error::Runtime { message: error });
+        }
 
-        let output = if error.is_empty() {
-            runner::Output::Success(output.trim().to_string())
-        } else {
-            runner::Output::RunTimeError(error)
-        };
-
+        let output = fs::read_to_string(self.output_path)?.trim().to_string();
         Ok(runner::Metrics {
             exit_status: status,
             exit_signal: WTERMSIG(status),

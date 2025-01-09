@@ -1,14 +1,10 @@
 mod metrics;
 
 use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
+    fs, io::Write, path::{Path, PathBuf}, process::{Command, Stdio}
 };
 
 pub use metrics::*;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     CommandArgs, Error, Result,
@@ -24,7 +20,7 @@ pub struct Runner<'a> {
 }
 
 impl Runner<'_> {
-    fn create_unique_project(&self, code: &str) -> Result<PathBuf> {
+    fn create_project(&self, code: &str) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
         fs::create_dir_all(&project_path)?;
@@ -42,19 +38,20 @@ impl Runner<'_> {
         Ok(project_path)
     }
 
-    /// Create a unique project using the hash of time and code
-    fn compile(&self, project_path: &Path) -> Result<()> {
+    pub fn compile(&self, code: &str) -> Result<PathBuf> {
+        let project_path = self.create_project(code)?;
+
         let Some(CommandArgs {
             binary: compiler,
             args,
         }) = self.compiler_args
         else {
-            return Ok(());
+            return Ok(project_path);
         };
 
         let process = Command::new(compiler)
             .args(args)
-            .current_dir(project_path)
+            .current_dir(&project_path)
             .stderr(Stdio::piped())
             .spawn()?;
 
@@ -66,38 +63,22 @@ impl Runner<'_> {
             });
         }
 
-        Ok(())
+        Ok(project_path)
     }
 
-    pub fn run(
-        &self,
-        code: impl AsRef<str>,
-        input_paths: &[&Path],
-    ) -> Result<Vec<metrics::Metrics>> {
-        let project_path = self.create_unique_project(code.as_ref())?;
-        let project_path = &project_path;
+    pub fn run(&self, project_path: &Path, input_path: &Path) -> Result<metrics::Metrics> {
+        let output_path = project_path.join(util::hash((input_path, "output")).to_string());
+        let error_path = project_path.join(util::hash((input_path, "error")).to_string());
 
-        self.compile(&project_path)?;
+        let sandbox = Sandbox::builder()
+            .project_path(project_path)
+            .config(self.sandbox_config.clone())
+            .input(input_path)?
+            .output_path(&output_path)
+            .error_path(&error_path)
+            .build();
 
-        input_paths
-            .into_par_iter()
-            .map(|input_path| {
-                let output_path =
-                    project_path.join(util::hash((input_path, "output")).to_string());
-                let error_path =
-                    project_path.join(util::hash((input_path, "error")).to_string());
-
-                let sandbox = Sandbox::builder()
-                    .project_path(project_path)
-                    .config(self.sandbox_config.clone())
-                    .input(input_path)?
-                    .output_path(&output_path)
-                    .error_path(&error_path)
-                    .build();
-
-                let sandbox = sandbox.spawn()?;
-                sandbox.wait()
-            })
-            .collect()
+        let sandbox = sandbox.spawn()?;
+        sandbox.wait()
     }
 }

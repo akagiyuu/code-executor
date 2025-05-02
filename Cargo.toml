@@ -11,7 +11,6 @@ A library designed for the backend of competitive programming platforms
 """
 
 [dependencies]
-bon = "3.3.2"
 libseccomp = "0.4.0"
 nix = { version = "0.30.0", features = ["fs", "process", "resource", "signal"] }
 quickcheck_macros = "1.0.0"

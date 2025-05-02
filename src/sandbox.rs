@@ -7,15 +7,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-use bon::Builder;
 use libseccomp::{ScmpAction, ScmpFilterContext, ScmpSyscall};
 use nix::{
-    libc::{self, WEXITSTATUS, WSTOPPED, WTERMSIG, wait4},
+    libc::{self, wait4, WEXITSTATUS, WSTOPPED, WTERMSIG},
     sys::{
-        resource::{Resource, setrlimit},
-        signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction},
+        resource::{setrlimit, Resource},
+        signal::{sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal},
     },
-    unistd::{ForkResult, alarm, dup2, execvp, fork},
+    unistd::{alarm, dup2, dup2_stderr, dup2_stdin, dup2_stdout, execvp, fork, ForkResult},
 };
 use state_shift::{impl_state, type_state};
 
@@ -25,17 +24,17 @@ use crate::{
 };
 
 extern "C" fn signal_handler(_: nix::libc::c_int) {}
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy)]
 pub struct RlimitConfig {
     pub resource: Resource,
     pub soft_limit: u64,
     pub hard_limit: u64,
 }
 
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy)]
 pub struct SandboxConfig<'a> {
-    scmp_black_list: &'a [&'a str],
-    rlimit_configs: &'a [RlimitConfig],
+    pub scmp_black_list: &'a [&'a str],
+    pub rlimit_configs: &'a [RlimitConfig],
 }
 
 impl<'a> SandboxConfig<'a> {
@@ -103,24 +102,21 @@ impl<'a> Sandbox<'a> {
     #[require(Initial)]
     fn load_io(&self) -> Result<()> {
         let stdin = fs::OpenOptions::new().read(true).open(self.stdin)?;
-        let stdin_raw_fd = io::stdin().as_raw_fd();
-        dup2(stdin.as_raw_fd(), stdin_raw_fd)?;
+        dup2_stdin(stdin)?;
 
         let stdout = fs::OpenOptions::new()
             .create(true)
             .truncate(true)
             .write(true)
             .open(self.stdout)?;
-        let stdout_raw_fd = io::stdout().as_raw_fd();
-        dup2(stdout.as_raw_fd(), stdout_raw_fd)?;
+        dup2_stdout(stdout)?;
 
         let stderr = fs::OpenOptions::new()
             .create(true)
             .truncate(true)
             .write(true)
             .open(self.stderr)?;
-        let sterr_raw_fd = io::stderr().as_raw_fd();
-        dup2(stderr.as_raw_fd(), sterr_raw_fd)?;
+        dup2_stderr(stderr)?;
 
         Ok(())
     }

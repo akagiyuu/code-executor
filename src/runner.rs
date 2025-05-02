@@ -1,82 +1,33 @@
-mod metrics;
+use std::{path::Path, time::Duration};
 
-use std::{
-    fs, io::Write, path::{Path, PathBuf}, process::{Command, Stdio}
-};
-
-pub use metrics::*;
+use bon::Builder;
 
 use crate::{
-    CommandArgs, Error, Result,
-    sandbox::{self, Sandbox},
-    util,
+    CommandArgs, Result,
+    metrics::Metrics,
+    sandbox::{Sandbox, SandboxConfig},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Builder)]
 pub struct Runner<'a> {
-    pub main_file: &'a str,
-    pub compiler_args: Option<CommandArgs<'a>>,
-    pub sandbox_config: sandbox::Config<'a>,
+    args: CommandArgs<'a>,
+    sandbox_config: SandboxConfig<'a>,
 }
 
 impl Runner<'_> {
-    fn create_project(&self, code: &str) -> Result<PathBuf> {
-        let project_path = util::generate_unique_path(code);
+    pub fn run(&self, project_path: &Path, stdin: &Path, time_limit: Duration) -> Result<Metrics> {
+        let stdout = project_path.join("stdout.txt");
+        let stderr = project_path.join("stderr.txt");
 
-        fs::create_dir_all(&project_path)?;
-
-        let mut main_file_path = project_path.clone();
-        main_file_path.push(self.main_file);
-
-        let mut main_file = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&main_file_path)?;
-
-        main_file.write_all(code.as_bytes())?;
-
-        Ok(project_path)
-    }
-
-    pub fn compile(&self, code: &str) -> Result<PathBuf> {
-        let project_path = self.create_project(code)?;
-
-        let Some(CommandArgs {
-            binary: compiler,
-            args,
-        }) = self.compiler_args
-        else {
-            return Ok(project_path);
-        };
-
-        let process = Command::new(compiler)
-            .args(args)
-            .current_dir(&project_path)
-            .stderr(Stdio::piped())
-            .spawn()?;
-
-        let compilation_error = process.wait_with_output()?.stderr;
-
-        if !compilation_error.is_empty() {
-            return Err(Error::Compilation {
-                message: String::from_utf8(compilation_error)?,
-            });
-        }
-
-        Ok(project_path)
-    }
-
-    pub fn run(&self, project_path: &Path, input_path: &Path) -> Result<metrics::Metrics> {
-        let output_path = project_path.join(util::hash((input_path, "output")).to_string());
-        let error_path = project_path.join(util::hash((input_path, "error")).to_string());
-
-        let sandbox = Sandbox::builder()
-            .project_path(project_path)
-            .config(self.sandbox_config.clone())
-            .input(input_path)?
-            .output_path(&output_path)
-            .error_path(&error_path)
-            .build();
+        let sandbox = Sandbox::new(
+            self.sandbox_config,
+            project_path,
+            self.args,
+            stdin,
+            stdout.as_path(),
+            stderr.as_path(),
+            time_limit,
+        );
 
         let sandbox = sandbox.spawn()?;
         sandbox.wait()

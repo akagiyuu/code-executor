@@ -77,8 +77,7 @@ pub struct Sandbox<'a> {
 #[impl_state]
 impl<'a> Sandbox<'a> {
     #[require(Initial)]
-    fn new(
-        &self,
+    pub fn new(
         config: SandboxConfig<'a>,
         project_path: &'a Path,
         args: CommandArgs<'a>,
@@ -128,7 +127,7 @@ impl<'a> Sandbox<'a> {
 
     #[require(Initial)]
     #[switch_to(Running)]
-    pub fn spawn(self) -> Result<Sandbox<'a>> {
+    pub fn spawn(self) -> Result<Sandbox<'a, Running>> {
         unsafe {
             sigaction(
                 Signal::SIGALRM,

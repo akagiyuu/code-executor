@@ -52,11 +52,11 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - run: ${{ matrix.deps }}
       - uses: Swatinem/rust-cache@v2
-      - name: Setup Chromium
-        uses: browser-actions/setup-chrome@v1
-        with:
-          install-dependencies: true
-          chrome-version: stable
+      - name: Install dependencies
+        run: |
+          apt-get update \
+              && apt-get install openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config -y \
+              && apt-get clean
       - name: Integration test
         run: |
           cargo test --target ${{ matrix.target }}

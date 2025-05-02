@@ -25,7 +25,6 @@ use crate::{
 };
 
 extern "C" fn signal_handler(_: nix::libc::c_int) {}
-
 #[derive(Debug, Clone, Copy, Builder)]
 pub struct RlimitConfig {
     pub resource: Resource,
@@ -61,7 +60,7 @@ impl<'a> SandboxConfig<'a> {
     states = (Initial, Running),
     slots = (Initial)
 )]
-#[derive(Debug, Builder)]
+#[derive(Debug)]
 pub struct Sandbox<'a> {
     config: SandboxConfig<'a>,
     project_path: &'a Path,
@@ -71,14 +70,37 @@ pub struct Sandbox<'a> {
     stderr: &'a Path,
     time_limit: Duration,
 
-    #[builder(skip = -1)]
     child_pid: i32,
-    #[builder(skip = Instant::now())]
     start: Instant,
 }
 
 #[impl_state]
 impl<'a> Sandbox<'a> {
+    #[require(Initial)]
+    fn new(
+        &self,
+        config: SandboxConfig<'a>,
+        project_path: &'a Path,
+        args: CommandArgs<'a>,
+        stdin: &'a Path,
+        stdout: &'a Path,
+        stderr: &'a Path,
+        time_limit: Duration,
+    ) -> Self {
+        Self {
+            config,
+            project_path,
+            args,
+            stdin,
+            stdout,
+            stderr,
+            time_limit,
+            child_pid: -1,
+            start: Instant::now(),
+            _state: (::core::marker::PhantomData),
+        }
+    }
+
     #[require(Initial)]
     fn load_io(&self) -> Result<()> {
         let stdin = fs::OpenOptions::new().read(true).open(self.stdin)?;
@@ -131,6 +153,7 @@ impl<'a> Sandbox<'a> {
                 time_limit: self.time_limit,
                 child_pid: child.as_raw(),
                 start,
+                _state: (::core::marker::PhantomData),
             }),
             // child process should not return to do things outside `spawn()`
             Ok(ForkResult::Child) => {

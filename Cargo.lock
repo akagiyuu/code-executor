@@ -90,6 +90,7 @@ dependencies = [
  "rand",
  "rayon",
  "rstest",
+ "state-shift",
  "tempfile",
  "thiserror",
 ]
@@ -608,6 +609,24 @@ checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "state-shift"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b84d514d82ae2456c0ecc1fdf84e77368ff158e7a9dcdfc135669ba3ec57fdf"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "stringcase",
+ "syn 2.0.93",
+]
+
+[[package]]
+name = "stringcase"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72abeda133c49d7bddece6c154728f83eec8172380c80ab7096da9487e20d27c"
 
 [[package]]
 name = "strsim"

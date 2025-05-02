@@ -1,83 +1,112 @@
-mod config;
-
-use std::ffi::{CString, c_int};
-use std::fs::{self, File};
-use std::io;
-use std::marker::PhantomData;
-use std::os::fd::AsRawFd as _;
-use std::path::{Path, PathBuf};
-use std::time::Instant;
-use std::{env, iter};
+use std::{
+    env,
+    ffi::{CString, c_int},
+    fs, io, iter,
+    os::fd::AsRawFd,
+    path::Path,
+    time::{Duration, Instant},
+};
 
 use bon::Builder;
-use nix::libc::{self, WEXITSTATUS, WSTOPPED, WTERMSIG, rusage, wait4};
-use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
-use nix::unistd::{ForkResult, alarm, dup2, execvp, fork};
+use libseccomp::{ScmpAction, ScmpFilterContext, ScmpSyscall};
+use nix::{
+    libc::{self, WEXITSTATUS, WSTOPPED, WTERMSIG, wait4},
+    sys::{
+        resource::{Resource, setrlimit},
+        signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction},
+    },
+    unistd::{ForkResult, alarm, dup2, execvp, fork},
+};
+use state_shift::{impl_state, type_state};
 
-pub use config::*;
-
-use crate::{CommandArgs, Error, Result, runner};
+use crate::{
+    CommandArgs, Error, Result,
+    metrics::{Metrics, Rusage, get_default_rusage},
+};
 
 extern "C" fn signal_handler(_: nix::libc::c_int) {}
 
-pub struct Init;
-pub struct Running;
-
-#[derive(Debug, Builder)]
-pub struct Sandbox<'a, State = Init> {
-    config: Config<'a>,
-
-    #[builder(into)]
-    project_path: PathBuf,
-
-    #[builder(with = |input_path: impl AsRef<Path>| -> io::Result<_> {
-        fs::OpenOptions::new().read(true).open(input_path)
-    })]
-    input: File,
-
-    output_path: &'a Path,
-
-    error_path: &'a Path,
-
-    #[builder(default = -1)]
-    child_pid: i32,
-
-    #[builder(default = Instant::now())]
-    begin_time: Instant,
-
-    #[builder(default)]
-    state: PhantomData<State>,
+#[derive(Debug, Clone, Copy, Builder)]
+pub struct RlimitConfig {
+    pub resource: Resource,
+    pub soft_limit: u64,
+    pub hard_limit: u64,
 }
 
-impl<'a> Sandbox<'a, Init> {
+#[derive(Debug, Clone, Copy, Builder)]
+pub struct SandboxConfig<'a> {
+    scmp_black_list: &'a [&'a str],
+    rlimit_configs: &'a [RlimitConfig],
+}
+
+impl<'a> SandboxConfig<'a> {
+    fn apply(&self) -> Result<()> {
+        for rlimit in self.rlimit_configs {
+            setrlimit(rlimit.resource, rlimit.soft_limit, rlimit.hard_limit)?;
+        }
+
+        let mut scmp_filter = ScmpFilterContext::new_filter(ScmpAction::Allow)?;
+        for s in self.scmp_black_list {
+            let syscall = ScmpSyscall::from_name(s)?;
+            scmp_filter.add_rule_exact(ScmpAction::KillProcess, syscall)?;
+        }
+
+        scmp_filter.load()?;
+
+        Ok(())
+    }
+}
+
+#[type_state(
+    states = (Initial, Running),
+    slots = (Initial)
+)]
+#[derive(Debug, Builder)]
+pub struct Sandbox<'a> {
+    config: SandboxConfig<'a>,
+    project_path: &'a Path,
+    args: CommandArgs<'a>,
+    stdin: &'a Path,
+    stdout: &'a Path,
+    stderr: &'a Path,
+    time_limit: Duration,
+
+    #[builder(skip = -1)]
+    child_pid: i32,
+    #[builder(skip = Instant::now())]
+    start: Instant,
+}
+
+#[impl_state]
+impl<'a> Sandbox<'a> {
+    #[require(Initial)]
     fn load_io(&self) -> Result<()> {
+        let stdin = fs::OpenOptions::new().read(true).open(self.stdin)?;
         let stdin_raw_fd = io::stdin().as_raw_fd();
-        dup2(self.input.as_raw_fd(), stdin_raw_fd)?;
+        dup2(stdin.as_raw_fd(), stdin_raw_fd)?;
 
-        let output = fs::OpenOptions::new()
+        let stdout = fs::OpenOptions::new()
             .create(true)
             .truncate(true)
             .write(true)
-            .open(self.output_path)?;
+            .open(self.stdout)?;
         let stdout_raw_fd = io::stdout().as_raw_fd();
-        dup2(output.as_raw_fd(), stdout_raw_fd)?;
+        dup2(stdout.as_raw_fd(), stdout_raw_fd)?;
 
-        let error = fs::OpenOptions::new()
+        let stderr = fs::OpenOptions::new()
             .create(true)
             .truncate(true)
             .write(true)
-            .open(self.error_path)?;
+            .open(self.stderr)?;
         let sterr_raw_fd = io::stderr().as_raw_fd();
-        dup2(error.as_raw_fd(), sterr_raw_fd)?;
+        dup2(stderr.as_raw_fd(), sterr_raw_fd)?;
 
         Ok(())
     }
 
-    /// WARNING:   
-    /// Unsafe to use `println!()` (or `unwrap()`) in child process.
-    /// See more in `fork()` document.
-    pub fn spawn(self) -> Result<Sandbox<'a, Running>> {
-        let now = Instant::now();
+    #[require(Initial)]
+    #[switch_to(Running)]
+    pub fn spawn(self) -> Result<Sandbox<'a>> {
         unsafe {
             sigaction(
                 Signal::SIGALRM,
@@ -89,16 +118,19 @@ impl<'a> Sandbox<'a, Init> {
             )
             .unwrap();
         }
+
+        let start = Instant::now();
         match unsafe { fork() } {
             Ok(ForkResult::Parent { child, .. }) => Ok(Sandbox {
                 config: self.config,
                 project_path: self.project_path,
-                input: self.input,
-                output_path: self.output_path,
-                error_path: self.error_path,
+                args: self.args,
+                stdin: self.stdin,
+                stdout: self.stdout,
+                stderr: self.stderr,
+                time_limit: self.time_limit,
                 child_pid: child.as_raw(),
-                begin_time: now,
-                state: PhantomData::<Running>,
+                start,
             }),
             // child process should not return to do things outside `spawn()`
             Ok(ForkResult::Child) => {
@@ -112,14 +144,14 @@ impl<'a> Sandbox<'a, Init> {
                     unsafe { libc::_exit(1) };
                 }
 
-                if self.config.load().is_err() {
+                if self.config.apply().is_err() {
                     eprintln!("Failed to load config");
                     unsafe { libc::_exit(1) };
                 }
 
-                alarm::set(self.config.time_limit.as_secs() as u32);
+                alarm::set(self.time_limit.as_secs() as u32);
 
-                let CommandArgs { binary, args } = self.config.args;
+                let CommandArgs { binary, args } = self.args;
                 let args: Vec<_> = iter::once(binary)
                     .chain(args.iter().copied())
                     .map(|arg| CString::new(arg.as_bytes()).unwrap())
@@ -134,28 +166,27 @@ impl<'a> Sandbox<'a, Init> {
             Err(e) => Err(e.into()),
         }
     }
-}
 
-impl Sandbox<'_, Running> {
-    pub fn wait(self) -> Result<runner::Metrics> {
+    #[require(Running)]
+    pub fn wait(self) -> Result<Metrics> {
         let mut status: c_int = 0;
-        let mut usage: rusage = runner::get_default_rusage();
+        let mut usage = get_default_rusage();
         unsafe {
             wait4(self.child_pid, &mut status, WSTOPPED, &mut usage);
         }
 
-        let error = fs::read_to_string(self.error_path)?;
+        let error = fs::read_to_string(self.stderr)?;
         if !error.is_empty() {
             return Err(Error::Runtime { message: error });
         }
 
-        let output = fs::read_to_string(self.output_path)?.trim().to_string();
-        Ok(runner::Metrics {
+        let output = fs::read_to_string(self.stdout)?.trim().to_string();
+        Ok(Metrics {
             exit_status: status,
             exit_signal: WTERMSIG(status),
             exit_code: WEXITSTATUS(status),
-            real_time_cost: self.begin_time.elapsed(),
-            resource_usage: runner::Rusage::from(usage),
+            real_time_cost: self.start.elapsed(),
+            resource_usage: Rusage::from(usage),
             output,
         })
     }

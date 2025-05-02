@@ -9,8 +9,8 @@ pub const PYTHON: Language = Language {
     },
     runner: Runner {
         args: CommandArgs {
-            binary: "main.py",
-            args: &[],
+            binary: "python",
+            args: &["main.py"],
         },
         sandbox_config: DEFAULT_SANDBOX_CONFIG,
     },

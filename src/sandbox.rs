@@ -151,7 +151,7 @@ impl<'a> Sandbox<'a> {
             }),
             // child process should not return to do things outside `spawn()`
             Ok(ForkResult::Child) => {
-                if env::set_current_dir(&self.project_path).is_err() {
+                if env::set_current_dir(self.project_path).is_err() {
                     eprintln!("Failed to load change to project directory");
                     unsafe { libc::_exit(100) };
                 }

@@ -1,8 +1,7 @@
 use std::{
     env,
     ffi::{CString, c_int},
-    fs, io, iter,
-    os::fd::AsRawFd,
+    fs, iter,
     path::Path,
     time::{Duration, Instant},
 };
@@ -14,7 +13,7 @@ use nix::{
         resource::{Resource, setrlimit},
         signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction},
     },
-    unistd::{ForkResult, alarm, dup2, dup2_stderr, dup2_stdin, dup2_stdout, execvp, fork},
+    unistd::{ForkResult, alarm, dup2_stderr, dup2_stdin, dup2_stdout, execvp, fork},
 };
 use state_shift::{impl_state, type_state};
 

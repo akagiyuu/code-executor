@@ -1,14 +1,12 @@
 use std::{path::Path, time::Duration};
 
-use bon::Builder;
-
 use crate::{
     CommandArgs, Result,
     metrics::Metrics,
     sandbox::{Sandbox, SandboxConfig},
 };
 
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy)]
 pub struct Runner<'a> {
     pub args: CommandArgs<'a>,
     pub sandbox_config: SandboxConfig<'a>,

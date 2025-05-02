@@ -6,14 +6,12 @@ mod sandbox;
 mod util;
 mod language;
 
-use bon::Builder;
-
 pub use compiler::Compiler;
 pub use error::*;
 pub use runner::Runner;
 pub use language::*;
 
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy)]
 pub struct CommandArgs<'a> {
     pub binary: &'a str,
     pub args: &'a [&'a str],

@@ -22,4 +22,3 @@ pub fn generate_unique_path(code: &str) -> PathBuf {
 
     path
 }
-

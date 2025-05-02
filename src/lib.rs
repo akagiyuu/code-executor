@@ -2,6 +2,7 @@ mod error;
 pub mod runner;
 mod sandbox;
 mod util;
+mod metrics;
 
 use std::time::Duration;
 

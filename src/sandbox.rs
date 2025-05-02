@@ -9,12 +9,12 @@ use std::{
 
 use libseccomp::{ScmpAction, ScmpFilterContext, ScmpSyscall};
 use nix::{
-    libc::{self, wait4, WEXITSTATUS, WSTOPPED, WTERMSIG},
+    libc::{self, WEXITSTATUS, WSTOPPED, WTERMSIG, wait4},
     sys::{
-        resource::{setrlimit, Resource},
-        signal::{sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal},
+        resource::{Resource, setrlimit},
+        signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction},
     },
-    unistd::{alarm, dup2, dup2_stderr, dup2_stdin, dup2_stdout, execvp, fork, ForkResult},
+    unistd::{ForkResult, alarm, dup2, dup2_stderr, dup2_stdin, dup2_stdout, execvp, fork},
 };
 use state_shift::{impl_state, type_state};
 
@@ -43,7 +43,7 @@ impl<'a> SandboxConfig<'a> {
             setrlimit(rlimit.resource, rlimit.soft_limit, rlimit.hard_limit)?;
         }
 
-        let mut scmp_filter = ScmpFilterContext::new_filter(ScmpAction::Allow)?;
+        let mut scmp_filter = ScmpFilterContext::new(ScmpAction::Allow)?;
         for s in self.scmp_black_list {
             let syscall = ScmpSyscall::from_name(s)?;
             scmp_filter.add_rule_exact(ScmpAction::KillProcess, syscall)?;

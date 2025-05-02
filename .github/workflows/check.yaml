@@ -54,9 +54,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install dependencies
         run: |
-          apt-get update \
-              && apt-get install openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config -y \
-              && apt-get clean
+          sudo apt-get update \
+              && sudo apt-get install openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config -y \
+              && sudo apt-get clean
       - name: Integration test
         run: |
           cargo test --target ${{ matrix.target }}

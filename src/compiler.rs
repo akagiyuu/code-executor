@@ -8,8 +8,8 @@ use std::{
 use crate::{CommandArgs, Error, Result, util};
 
 pub struct Compiler<'a> {
-    main_file: &'a str,
-    args: Option<CommandArgs<'a>>,
+    pub main_file: &'a str,
+    pub args: Option<CommandArgs<'a>>,
 }
 
 impl Compiler<'_> {

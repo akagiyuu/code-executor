@@ -10,8 +10,8 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, Builder)]
 pub struct Runner<'a> {
-    args: CommandArgs<'a>,
-    sandbox_config: SandboxConfig<'a>,
+    pub args: CommandArgs<'a>,
+    pub sandbox_config: SandboxConfig<'a>,
 }
 
 impl Runner<'_> {

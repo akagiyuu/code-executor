@@ -39,15 +39,10 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             toolchain: stable
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            toolchain: stable
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            toolchain: stable
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            toolchain: stable
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            toolchain: nightly
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
@@ -57,6 +52,11 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - run: ${{ matrix.deps }}
       - uses: Swatinem/rust-cache@v2
+      - name: Setup Chromium
+        uses: browser-actions/setup-chrome@v1
+        with:
+          install-dependencies: true
+          chrome-version: stable
       - name: Integration test
         run: |
           cargo test --target ${{ matrix.target }}

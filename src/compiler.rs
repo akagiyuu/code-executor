@@ -7,6 +7,7 @@ use std::{
 
 use crate::{CommandArgs, Error, Result, util};
 
+#[derive(Debug, Clone, Copy)]
 pub struct Compiler<'a> {
     pub main_file: &'a str,
     pub args: Option<CommandArgs<'a>>,

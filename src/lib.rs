@@ -17,6 +17,7 @@ pub struct CommandArgs<'a> {
     pub args: &'a [&'a str],
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Language<'a> {
     pub compiler: Compiler<'a>,
     pub runner: Runner<'a>,

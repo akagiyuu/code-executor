@@ -3,6 +3,7 @@ pub mod runner;
 mod sandbox;
 mod util;
 mod metrics;
+mod compiler;
 
 use std::time::Duration;
 

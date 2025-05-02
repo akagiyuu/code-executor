@@ -4,11 +4,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("Compilation error: {message}")]
     Compilation { message: String },
-    
+
     #[error("Runtime error: {message}")]
     Runtime { message: String },
-    
-    #[error("IO error: {0}")] 
+
+    #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
 }
 

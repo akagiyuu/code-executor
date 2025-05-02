@@ -1,25 +1,19 @@
-mod metrics;
-
 use std::{
-    fs, io::Write, path::{Path, PathBuf}, process::{Command, Stdio}
+    fs,
+    io::Write,
+    path::PathBuf,
+    process::{Command, Stdio},
 };
 
-pub use metrics::*;
+use crate::{CommandArgs, Error, Result, util};
 
-use crate::{
-    CommandArgs, Error, Result,
-    sandbox::{self, Sandbox},
-    util,
-};
-
-#[derive(Debug)]
-pub struct Runner<'a> {
+#[derive(Debug, Clone, Copy)]
+pub struct Compiler<'a> {
     pub main_file: &'a str,
-    pub compiler_args: Option<CommandArgs<'a>>,
-    pub sandbox_config: sandbox::Config<'a>,
+    pub args: Option<CommandArgs<'a>>,
 }
 
-impl Runner<'_> {
+impl Compiler<'_> {
     fn create_project(&self, code: &str) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
@@ -44,7 +38,7 @@ impl Runner<'_> {
         let Some(CommandArgs {
             binary: compiler,
             args,
-        }) = self.compiler_args
+        }) = self.args
         else {
             return Ok(project_path);
         };
@@ -64,21 +58,5 @@ impl Runner<'_> {
         }
 
         Ok(project_path)
-    }
-
-    pub fn run(&self, project_path: &Path, input_path: &Path) -> Result<metrics::Metrics> {
-        let output_path = project_path.join(util::hash((input_path, "output")).to_string());
-        let error_path = project_path.join(util::hash((input_path, "error")).to_string());
-
-        let sandbox = Sandbox::builder()
-            .project_path(project_path)
-            .config(self.sandbox_config.clone())
-            .input(input_path)?
-            .output_path(&output_path)
-            .error_path(&error_path)
-            .build();
-
-        let sandbox = sandbox.spawn()?;
-        sandbox.wait()
     }
 }

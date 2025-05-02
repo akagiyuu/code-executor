@@ -36,7 +36,7 @@ pub struct SandboxConfig<'a> {
     pub rlimit_configs: &'a [RlimitConfig],
 }
 
-impl<'a> SandboxConfig<'a> {
+impl SandboxConfig<'_> {
     fn apply(&self) -> Result<()> {
         for rlimit in self.rlimit_configs {
             setrlimit(rlimit.resource, rlimit.soft_limit, rlimit.hard_limit)?;

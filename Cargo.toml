@@ -18,8 +18,4 @@ state-shift = "2.1.1"
 thiserror = "2.0.9"
 
 [dev-dependencies]
-rayon = "1.10.0"
-anyhow = "1.0.95"
-rand = "0.8.5"
-rstest = "0.23.0"
-tempfile = "3.14.0"
+rstest = "0.25.0"

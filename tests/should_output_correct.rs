@@ -1,6 +1,6 @@
 mod util;
 
-use std::{path::PathBuf, time::Duration};
+use std::{i64, path::PathBuf, time::Duration};
 
 use code_executor::*;
 use rstest::rstest;
@@ -17,17 +17,15 @@ async fn should_output_correct(
     let code = read_code(language, &problem_path);
     let project_path = language.compiler.compile(&code).unwrap();
 
+    let runner = Runner::new(
+        language.runner_args,
+        &project_path,
+        Duration::from_secs(2),
+        i64::MAX,
+    )
+    .unwrap();
     for test_case in problem.test_cases {
-        let metrics = language
-            .runner
-            .run(
-                &project_path,
-                &test_case.input,
-                Duration::from_secs(10),
-                i64::MAX,
-            )
-            .await
-            .unwrap();
+        let metrics = runner.run(&test_case.input).await.unwrap();
         assert_eq!(metrics.stdout, test_case.output);
     }
 }

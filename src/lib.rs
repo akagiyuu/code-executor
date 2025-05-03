@@ -2,7 +2,7 @@ mod compiler;
 mod error;
 mod language;
 mod metrics;
-pub mod runner;
+mod runner;
 mod sandbox;
 mod util;
 
@@ -10,6 +10,7 @@ pub use compiler::Compiler;
 pub use error::*;
 pub use language::*;
 pub use runner::Runner;
+pub use sandbox::{SandboxConfig, RlimitConfig};
 
 #[derive(Debug, Clone, Copy)]
 pub struct CommandArgs<'a> {

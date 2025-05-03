@@ -29,6 +29,7 @@ impl Runner<'_> {
         format!("runner-{}", hasher.finish())
     }
 
+    #[tracing::instrument(err)]
     fn create_cgroup(&self) -> Result<Cgroup> {
         let hier = hierarchies::auto();
         let cgroup = CgroupBuilder::new(&self.get_cgroup_name())
@@ -44,6 +45,7 @@ impl Runner<'_> {
         Ok(cgroup)
     }
 
+    #[tracing::instrument(err)]
     pub async fn run(
         &self,
         project_path: &Path,

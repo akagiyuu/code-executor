@@ -16,6 +16,7 @@ libseccomp = "0.4.0"
 state-shift = "2.1.1"
 thiserror = "2.0.9"
 tokio = { version = "1.44.2", features = ["full"] }
+tracing = "0.1.41"
 
 [dev-dependencies]
 rstest = "0.25.0"

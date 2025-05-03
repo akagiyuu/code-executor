@@ -1,6 +1,6 @@
 use crate::{CommandArgs, Compiler, Language, Runner};
 
-use super::DEFAULT_SANDBOX_CONFIG;
+use super::{DEFAULT_MAX_CPU_PERCENTAGE, DEFAULT_MAX_MEMORY};
 
 pub const RUST: Language = Language {
     compiler: Compiler {
@@ -15,6 +15,7 @@ pub const RUST: Language = Language {
             binary: "./main",
             args: &[],
         },
-        sandbox_config: DEFAULT_SANDBOX_CONFIG,
+        max_memory: DEFAULT_MAX_MEMORY,
+        max_cpu_percentage: DEFAULT_MAX_CPU_PERCENTAGE,
     },
 };

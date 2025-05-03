@@ -3,16 +3,14 @@ mod error;
 mod language;
 mod metrics;
 mod runner;
-mod sandbox;
 mod util;
 
 pub use compiler::Compiler;
 pub use error::*;
 pub use language::*;
 pub use runner::Runner;
-pub use sandbox::{RlimitConfig, SandboxConfig};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct CommandArgs<'a> {
     pub binary: &'a str,
     pub args: &'a [&'a str],

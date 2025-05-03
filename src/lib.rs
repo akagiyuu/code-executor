@@ -10,7 +10,7 @@ pub use compiler::Compiler;
 pub use error::*;
 pub use language::*;
 pub use runner::Runner;
-pub use sandbox::{SandboxConfig, RlimitConfig};
+pub use sandbox::{RlimitConfig, SandboxConfig};
 
 #[derive(Debug, Clone, Copy)]
 pub struct CommandArgs<'a> {

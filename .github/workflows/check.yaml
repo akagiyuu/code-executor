@@ -58,4 +58,5 @@ jobs:
           packages: openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config
       - name: Integration test
         run: |
-          sudo cargo test --target ${{ matrix.target }}
+          sudo chown -R $USER:$USER /sys/fs/cgroup
+          cargo test --target ${{ matrix.target }}

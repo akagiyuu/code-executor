@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use code_executor::CPP;
+use code_executor::{CPP, Runner};
 
 #[tokio::main]
 async fn main() {
@@ -17,11 +17,14 @@ async fn main() {
     "#;
 
     let project_path = CPP.compiler.compile(code).unwrap();
-    let metrics = CPP
-        .runner
-        .run(&project_path, "Hello", Duration::from_secs(1), i64::MAX)
-        .await
-        .unwrap();
+    let runner = Runner::new(
+        CPP.runner_args,
+        &project_path,
+        Duration::from_secs(2),
+        i64::MAX,
+    )
+    .unwrap();
+    let metrics = runner.run("Hello").await.unwrap();
 
     println!("{:#?}", metrics);
 }

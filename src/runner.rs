@@ -1,6 +1,6 @@
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
-    path::Path,
+    path::{Path, PathBuf},
     process::{self, Stdio},
     time::Duration,
 };
@@ -14,48 +14,51 @@ use tokio::{
 
 use crate::{CommandArgs, Result, metrics::Metrics};
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug)]
 pub struct Runner<'a> {
-    pub args: CommandArgs<'a>,
+    args: CommandArgs<'a>,
+    project_path: &'a Path,
+    time_limit: Duration,
+    cgroup: Cgroup,
 }
 
-impl Runner<'_> {
-    fn get_cgroup_name(&self, project_path: &Path) -> String {
-        let mut hasher = DefaultHasher::new();
-        self.hash(&mut hasher);
-        project_path.hash(&mut hasher);
-
-        format!("runner/{}", hasher.finish())
-    }
-
+impl<'a> Runner<'a> {
     #[tracing::instrument(err)]
-    fn create_cgroup(&self, project_path: &Path, max_memory: i64) -> Result<Cgroup> {
+    pub fn new(
+        args: CommandArgs<'a>,
+        project_path: &'a Path,
+        time_limit: Duration,
+        memory_limit: i64,
+    ) -> Result<Self> {
+        let mut hasher = DefaultHasher::new();
+        (args, memory_limit, time_limit).hash(&mut hasher);
+        let cgroup_name = format!("runner/{}", hasher.finish());
         let hier = hierarchies::auto();
-        let cgroup = CgroupBuilder::new(&self.get_cgroup_name(project_path))
+        let cgroup = CgroupBuilder::new(&cgroup_name)
             .memory()
-            .memory_swap_limit(max_memory)
-            .memory_soft_limit(max_memory)
-            .memory_hard_limit(max_memory)
+            .memory_swap_limit(memory_limit)
+            .memory_soft_limit(memory_limit)
+            .memory_hard_limit(memory_limit)
             .done()
             .build(hier)?;
-        Ok(cgroup)
+
+        Ok(Self {
+            args,
+            project_path,
+            cgroup,
+            time_limit,
+        })
     }
 
     #[tracing::instrument(err)]
-    pub async fn run(
-        &self,
-        project_path: &Path,
-        input: &str,
-        time_limit: Duration,
-        max_memory: i64,
-    ) -> Result<Metrics> {
+    pub async fn run(&self, input: &str) -> Result<Metrics> {
         let CommandArgs { binary, args } = self.args;
 
-        let cgroup = self.create_cgroup(project_path, max_memory)?;
+        let cgroup = self.cgroup.clone();
 
         let mut child = Command::new(binary);
         let child = child
-            .current_dir(project_path)
+            .current_dir(self.project_path)
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -73,7 +76,7 @@ impl Runner<'_> {
         let child_stdin = child.stdin.as_mut().unwrap();
         child_stdin.write_all(input.as_bytes()).await?;
 
-        let output = timeout(time_limit, child.wait_with_output()).await??;
+        let output = timeout(self.time_limit, child.wait_with_output()).await??;
 
         Ok(Metrics {
             run_time: start.elapsed(),

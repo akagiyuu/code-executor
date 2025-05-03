@@ -46,16 +46,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ${{ matrix.deps }}
+      - name: Install Rust toolchain & target via sudo
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y curl build-essential
+          curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain ${{ matrix.toolchain }}
+          echo 'export PATH="/root/.cargo/bin:$PATH"' >> $GITHUB_ENV
+          sudo /root/.cargo/bin/rustup target add ${{ matrix.target }}
+
       - uses: Swatinem/rust-cache@v2
-      - name: Install dependencies
+
+      - name: Install Cargo via apt
+        run: |
+          sudo apt-get install -y cargo
+
+      - name: Install other dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: curl openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config cargo
-      - name: Install Rust toolchain
-        run: |
-          curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain ${{ matrix.toolchain }}
-          sudo source $HOME/.cargo/env
-          sudo rustup target add ${{ matrix.target }}
+          packages: |
+            openjdk-8-jdk
+            build-essential
+            python3
+            python-is-python3
+            libseccomp-dev
+            libgbm-dev
+            libxkbcommon-x11-0
+            pkg-config
+
       - name: Integration test
-        run: |
-          sudo -E cargo test --target ${{ matrix.target }}
+        run: sudo -E cargo test --target ${{ matrix.target }}

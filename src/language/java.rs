@@ -16,6 +16,6 @@ pub const JAVA: Language = Language {
             args: &["Main"],
         },
         max_memory: DEFAULT_MAX_MEMORY,
-        max_cpu_percentage: DEFAULT_MAX_CPU_PERCENTAGE
+        max_cpu_percentage: DEFAULT_MAX_CPU_PERCENTAGE,
     },
 };

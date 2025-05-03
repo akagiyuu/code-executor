@@ -15,8 +15,6 @@ pub const CPP: Language = Language {
             binary: "./main",
             args: &[],
         },
-        max_memory: 1024 * 1024 * 1024,
-        max_cpu_percentage: 50,
     },
 };
 
@@ -37,7 +35,7 @@ async fn main() {
     let project_path = CPP.compiler.compile(code).unwrap();
     let metrics = CPP
         .runner
-        .run(&project_path, "Hello World", Duration::from_secs(1))
+        .run(&project_path, "Hello", Duration::from_secs(1), i64::MAX)
         .await
         .unwrap();
 

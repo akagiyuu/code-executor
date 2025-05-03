@@ -20,7 +20,12 @@ async fn should_output_correct(
     for test_case in problem.test_cases {
         let metrics = language
             .runner
-            .run(&project_path, &test_case.input, Duration::from_secs(10))
+            .run(
+                &project_path,
+                &test_case.input,
+                Duration::from_secs(10),
+                i64::MAX,
+            )
             .await
             .unwrap();
         assert_eq!(metrics.stdout, test_case.output);

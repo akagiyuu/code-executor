@@ -19,7 +19,7 @@ async fn main() {
     let project_path = CPP.compiler.compile(code).unwrap();
     let metrics = CPP
         .runner
-        .run(&project_path, "Helo World", Duration::from_secs(1))
+        .run(&project_path, "Hello", Duration::from_secs(1), i64::MAX)
         .await
         .unwrap();
 

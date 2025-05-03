@@ -1,4 +1,4 @@
-use crate::{CommandArgs, Compiler, Language, Runner};
+use crate::{CommandArgs, Compiler, Language};
 
 pub const RUST: Language = Language {
     compiler: Compiler {
@@ -8,10 +8,8 @@ pub const RUST: Language = Language {
             args: &["-O", "main.rs"],
         }),
     },
-    runner: Runner {
-        args: CommandArgs {
-            binary: "./main",
-            args: &[],
-        },
+    runner_args: CommandArgs {
+        binary: "./main",
+        args: &[],
     },
 };

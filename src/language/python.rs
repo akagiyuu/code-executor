@@ -1,14 +1,12 @@
-use crate::{CommandArgs, Compiler, Language, Runner};
+use crate::{CommandArgs, Compiler, Language};
 
 pub const PYTHON: Language = Language {
     compiler: Compiler {
         main_file: "main.py",
         args: None,
     },
-    runner: Runner {
-        args: CommandArgs {
-            binary: "python",
-            args: &["main.py"],
-        },
+    runner_args: CommandArgs {
+        binary: "python",
+        args: &["main.py"],
     },
 };

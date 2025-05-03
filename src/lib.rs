@@ -19,5 +19,5 @@ pub struct CommandArgs<'a> {
 #[derive(Debug, Clone, Copy)]
 pub struct Language<'a> {
     pub compiler: Compiler<'a>,
-    pub runner: Runner<'a>,
+    pub runner_args: CommandArgs<'a>,
 }

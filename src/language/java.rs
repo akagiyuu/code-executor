@@ -1,4 +1,4 @@
-use crate::{CommandArgs, Compiler, Language, Runner};
+use crate::{CommandArgs, Compiler, Language};
 
 pub const JAVA: Language = Language {
     compiler: Compiler {
@@ -8,10 +8,8 @@ pub const JAVA: Language = Language {
             args: &["Main.java"],
         }),
     },
-    runner: Runner {
-        args: CommandArgs {
-            binary: "java",
-            args: &["Main"],
-        },
+    runner_args: CommandArgs {
+        binary: "java",
+        args: &["Main"],
     },
 };

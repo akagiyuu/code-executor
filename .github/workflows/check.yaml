@@ -46,13 +46,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ${{ matrix.deps }}
-      - name: Install Rust toolchain & target via sudo
+      - name: Install Rust (nightly) via sudo
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y curl build-essential
-          curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain ${{ matrix.toolchain }}
+          curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain nightly
           echo 'export PATH="/root/.cargo/bin:$PATH"' >> $GITHUB_ENV
-          sudo /root/.cargo/bin/rustup target add ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
 

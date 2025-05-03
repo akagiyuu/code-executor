@@ -1,6 +1,6 @@
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
-    path::{Path, PathBuf},
+    path::Path,
     process::{self, Stdio},
     time::Duration,
 };

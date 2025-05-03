@@ -58,5 +58,4 @@ jobs:
           packages: openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config rustc
       - name: Integration test
         run: |
-          rustc --version
           cargo test --target ${{ matrix.target }}

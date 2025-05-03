@@ -21,8 +21,8 @@ const DEFAULT_SANDBOX_CONFIG: SandboxConfig = SandboxConfig {
         },
         RlimitConfig {
             resource: Resource::RLIMIT_AS,
-            soft_limit: 1024 * 1024 * 1024,
-            hard_limit: 1024 * 1024 * 1024,
+            soft_limit: 1024 * 1024 * 1024 * 6,
+            hard_limit: 1024 * 1024 * 1024 * 6,
         },
         RlimitConfig {
             resource: Resource::RLIMIT_CPU,

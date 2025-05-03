@@ -17,29 +17,25 @@ use crate::{CommandArgs, Result, metrics::Metrics};
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct Runner<'a> {
     pub args: CommandArgs<'a>,
-    pub max_memory: i64,
-    pub max_cpu_percentage: i64,
 }
 
 impl Runner<'_> {
-    fn get_cgroup_name(&self) -> String {
+    fn get_cgroup_name(&self, project_path: &Path) -> String {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
+        project_path.hash(&mut hasher);
 
-        format!("runner-{}", hasher.finish())
+        format!("runner/{}", hasher.finish())
     }
 
     #[tracing::instrument(err)]
-    fn create_cgroup(&self) -> Result<Cgroup> {
+    fn create_cgroup(&self, project_path: &Path, max_memory: i64) -> Result<Cgroup> {
         let hier = hierarchies::auto();
-        let cgroup = CgroupBuilder::new(&self.get_cgroup_name())
+        let cgroup = CgroupBuilder::new(&self.get_cgroup_name(project_path))
             .memory()
-            .memory_swap_limit(self.max_memory)
-            .memory_soft_limit(self.max_memory)
-            .memory_hard_limit(self.max_memory)
-            .done()
-            .cpu()
-            .quota(self.max_cpu_percentage * 1000)
+            .memory_swap_limit(max_memory)
+            .memory_soft_limit(max_memory)
+            .memory_hard_limit(max_memory)
             .done()
             .build(hier)?;
         Ok(cgroup)
@@ -51,10 +47,11 @@ impl Runner<'_> {
         project_path: &Path,
         input: &str,
         time_limit: Duration,
+        max_memory: i64,
     ) -> Result<Metrics> {
         let CommandArgs { binary, args } = self.args;
 
-        let cgroup = self.create_cgroup()?;
+        let cgroup = self.create_cgroup(project_path, max_memory)?;
 
         let mut child = Command::new(binary);
         let child = child

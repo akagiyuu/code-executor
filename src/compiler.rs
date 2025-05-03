@@ -35,7 +35,7 @@ impl Compiler<'_> {
 
     #[tracing::instrument(err)]
     pub fn compile(&self, code: &str) -> Result<PathBuf> {
-        let project_path = self.create_project(code)?;
+        let project_path = self.create_project(code).unwrap();
 
         let Some(CommandArgs {
             binary: compiler,
@@ -49,13 +49,13 @@ impl Compiler<'_> {
             .args(args)
             .current_dir(&project_path)
             .stderr(Stdio::piped())
-            .spawn()?;
+            .spawn().unwrap();
 
-        let compilation_error = process.wait_with_output()?.stderr;
+        let compilation_error = process.wait_with_output().unwrap().stderr;
 
         if !compilation_error.is_empty() {
             return Err(Error::Compilation {
-                message: String::from_utf8(compilation_error)?,
+                message: String::from_utf8(compilation_error).unwrap(),
             });
         }
 

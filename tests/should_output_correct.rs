@@ -7,8 +7,9 @@ use rstest::rstest;
 use util::{Problem, read_code};
 
 #[rstest]
-fn should_output_correct(
-    #[values(CPP, RUST, JAVA, PYTHON)] language: Language,
+#[tokio::test]
+async fn should_output_correct(
+    #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
     #[files("tests/problem/*")] problem_path: PathBuf,
 ) {
     let problem: Problem = problem_path.as_path().into();
@@ -19,12 +20,9 @@ fn should_output_correct(
     for test_case in problem.test_cases {
         let metrics = language
             .runner
-            .run(
-                &project_path,
-                &test_case.input_path,
-                Duration::from_secs(10),
-            )
+            .run(&project_path, &test_case.input, Duration::from_secs(10))
+            .await
             .unwrap();
-        assert_eq!(metrics.output, test_case.output);
+        assert_eq!(metrics.stdout, test_case.output);
     }
 }

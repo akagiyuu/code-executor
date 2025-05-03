@@ -1,12 +1,9 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 use code_executor::Language;
 
 pub struct TestCase {
-    pub input_path: PathBuf,
+    pub input: String,
     pub output: String,
 }
 
@@ -26,12 +23,13 @@ impl From<&Path> for Problem {
                 }
 
                 let input_path = path.join("in.txt");
+                let input = fs::read_to_string(input_path).unwrap();
 
                 let output_path = path.join("out.txt");
                 let output = fs::read_to_string(output_path).unwrap();
                 let output = output.trim().to_string();
 
-                Some(TestCase { input_path, output })
+                Some(TestCase { input, output })
             })
             .collect();
 

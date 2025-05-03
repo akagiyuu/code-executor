@@ -45,32 +45,17 @@ jobs:
             toolchain: nightly
     steps:
       - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          target: ${{ matrix.target }}
+          toolchain: ${{ matrix.toolchain }}
       - run: ${{ matrix.deps }}
-      - name: Install Rust (nightly) via sudo
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y curl build-essential
-          curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain nightly
-          echo 'export PATH="/root/.cargo/bin:$PATH"' >> $GITHUB_ENV
-
       - uses: Swatinem/rust-cache@v2
-
-      - name: Install Cargo via apt
-        run: |
-          sudo apt-get install -y cargo
-
-      - name: Install other dependencies
+      - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: |
-            openjdk-8-jdk
-            build-essential
-            python3
-            python-is-python3
-            libseccomp-dev
-            libgbm-dev
-            libxkbcommon-x11-0
-            pkg-config
-
+          packages: openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config
       - name: Integration test
-        run: sudo -E cargo test --target ${{ matrix.target }}
+        run: |
+          sudo cargo test --target ${{ matrix.target }}

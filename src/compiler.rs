@@ -14,6 +14,7 @@ pub struct Compiler<'a> {
 }
 
 impl Compiler<'_> {
+    #[tracing::instrument(err)]
     fn create_project(&self, code: &str) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
@@ -32,6 +33,7 @@ impl Compiler<'_> {
         Ok(project_path)
     }
 
+    #[tracing::instrument(err)]
     pub fn compile(&self, code: &str) -> Result<PathBuf> {
         let project_path = self.create_project(code)?;
 

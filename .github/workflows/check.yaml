@@ -54,7 +54,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           curl https://sh.rustup.rs -sSf | sudo sh -s -- -y --default-toolchain ${{ matrix.toolchain }}
-          source $HOME/.cargo/env
+          sudo source $HOME/.cargo/env
           sudo rustup target add ${{ matrix.target }}
       - name: Integration test
         run: |

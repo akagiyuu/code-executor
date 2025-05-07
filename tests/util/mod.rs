@@ -3,8 +3,8 @@ use std::{fs, path::Path};
 use code_executor::Language;
 
 pub struct TestCase {
-    pub input: String,
-    pub output: String,
+    pub input: Vec<u8>,
+    pub output: Vec<u8>,
 }
 
 pub struct Problem {
@@ -23,11 +23,10 @@ impl From<&Path> for Problem {
                 }
 
                 let input_path = path.join("in.txt");
-                let input = fs::read_to_string(input_path).unwrap();
+                let input = fs::read(input_path).unwrap();
 
                 let output_path = path.join("out.txt");
-                let output = fs::read_to_string(output_path).unwrap();
-                let output = output.trim().to_string();
+                let output = fs::read(output_path).unwrap();
 
                 Some(TestCase { input, output })
             })
@@ -37,6 +36,6 @@ impl From<&Path> for Problem {
     }
 }
 
-pub fn read_code(language: Language, problem_path: &Path) -> String {
-    fs::read_to_string(problem_path.join(language.compiler.main_file)).unwrap()
+pub fn read_code(language: Language, problem_path: &Path) -> Vec<u8> {
+    fs::read(problem_path.join(language.compiler.main_file)).unwrap()
 }

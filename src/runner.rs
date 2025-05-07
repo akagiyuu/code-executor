@@ -51,7 +51,7 @@ impl<'a> Runner<'a> {
     }
 
     #[tracing::instrument(err)]
-    pub async fn run(&self, input: &str) -> Result<Metrics> {
+    pub async fn run(&self, input: &[u8]) -> Result<Metrics> {
         let CommandArgs { binary, args } = self.args;
 
         let cgroup = self.cgroup.clone();
@@ -74,15 +74,15 @@ impl<'a> Runner<'a> {
         let mut child = child.spawn()?;
 
         let child_stdin = child.stdin.as_mut().unwrap();
-        child_stdin.write_all(input.as_bytes()).await?;
+        child_stdin.write_all(input).await?;
 
         let output = timeout(self.time_limit, child.wait_with_output()).await??;
 
         Ok(Metrics {
             run_time: start.elapsed(),
             exit_status: output.status,
-            stdout: String::from_utf8(output.stdout)?.trim().to_string(),
-            stderr: String::from_utf8(output.stderr)?,
+            stdout: output.stdout,
+            stderr: output.stderr,
         })
     }
 }

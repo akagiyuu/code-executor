@@ -4,6 +4,6 @@ use std::{process::ExitStatus, time::Duration};
 pub struct Metrics {
     pub exit_status: ExitStatus,
     pub run_time: Duration,
-    pub stdout: String,
-    pub stderr: String,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
 }

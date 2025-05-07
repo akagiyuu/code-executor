@@ -12,7 +12,7 @@ where
     hasher.finish()
 }
 
-pub fn generate_unique_path(code: &str) -> PathBuf {
+pub fn generate_unique_path(code: &[u8]) -> PathBuf {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or(Duration::from_secs(0));

@@ -12,7 +12,7 @@ pub struct Compiler<'a> {
 
 impl Compiler<'_> {
     #[tracing::instrument(err)]
-    async fn create_project(&self, code: &str) -> Result<PathBuf> {
+    async fn create_project(&self, code: &[u8]) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
         fs::create_dir_all(&project_path).await?;
@@ -26,13 +26,13 @@ impl Compiler<'_> {
             .open(&main_file_path)
             .await?;
 
-        main_file.write_all(code.as_bytes()).await?;
+        main_file.write_all(code).await?;
 
         Ok(project_path)
     }
 
     #[tracing::instrument(err)]
-    pub async fn compile(&self, code: &str) -> Result<PathBuf> {
+    pub async fn compile(&self, code: &[u8]) -> Result<PathBuf> {
         let project_path = self.create_project(code).await?;
 
         let Some(CommandArgs {

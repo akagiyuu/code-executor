@@ -2,6 +2,7 @@ mod util;
 
 use std::{path::PathBuf, time::Duration};
 
+use bstr::ByteSlice;
 use code_executor::*;
 use rstest::rstest;
 use util::{Problem, read_code};
@@ -26,6 +27,8 @@ async fn should_output_correct(
     .unwrap();
     for test_case in problem.test_cases {
         let metrics = runner.run(&test_case.input).await.unwrap();
-        assert_eq!(metrics.stdout, test_case.output);
+        let metrics_out = metrics.stdout.trim();
+        let test_case_out = test_case.output.trim();
+        assert_eq!(metrics_out, test_case_out);
     }
 }

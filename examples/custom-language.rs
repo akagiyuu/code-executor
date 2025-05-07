@@ -30,7 +30,7 @@ async fn main() {
         }
     "#;
 
-    let project_path = CPP.compiler.compile(code).unwrap();
+    let project_path = CPP.compiler.compile(code).await.unwrap();
     let runner = Runner::new(
         CPP.runner_args,
         &project_path,

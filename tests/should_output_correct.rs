@@ -1,6 +1,6 @@
 mod util;
 
-use std::{i64, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 use code_executor::*;
 use rstest::rstest;
@@ -15,7 +15,7 @@ async fn should_output_correct(
     let problem: Problem = problem_path.as_path().into();
 
     let code = read_code(language, &problem_path);
-    let project_path = language.compiler.compile(&code).unwrap();
+    let project_path = language.compiler.compile(&code).await.unwrap();
 
     let runner = Runner::new(
         language.runner_args,

@@ -1,9 +1,6 @@
-use std::{
-    fs,
-    io::Write,
-    path::PathBuf,
-    process::{Command, Stdio},
-};
+use std::{path::PathBuf, process::Stdio};
+
+use tokio::{fs, io::AsyncWriteExt, process::Command};
 
 use crate::{CommandArgs, Error, Result, util};
 
@@ -15,10 +12,10 @@ pub struct Compiler<'a> {
 
 impl Compiler<'_> {
     #[tracing::instrument(err)]
-    fn create_project(&self, code: &str) -> Result<PathBuf> {
+    async fn create_project(&self, code: &str) -> Result<PathBuf> {
         let project_path = util::generate_unique_path(code);
 
-        fs::create_dir_all(&project_path)?;
+        fs::create_dir_all(&project_path).await?;
 
         let mut main_file_path = project_path.clone();
         main_file_path.push(self.main_file);
@@ -26,16 +23,17 @@ impl Compiler<'_> {
         let mut main_file = fs::OpenOptions::new()
             .create_new(true)
             .write(true)
-            .open(&main_file_path)?;
+            .open(&main_file_path)
+            .await?;
 
-        main_file.write_all(code.as_bytes())?;
+        main_file.write_all(code.as_bytes()).await?;
 
         Ok(project_path)
     }
 
     #[tracing::instrument(err)]
-    pub fn compile(&self, code: &str) -> Result<PathBuf> {
-        let project_path = self.create_project(code)?;
+    pub async fn compile(&self, code: &str) -> Result<PathBuf> {
+        let project_path = self.create_project(code).await?;
 
         let Some(CommandArgs {
             binary: compiler,
@@ -51,7 +49,7 @@ impl Compiler<'_> {
             .stderr(Stdio::piped())
             .spawn()?;
 
-        let compilation_error = process.wait_with_output()?.stderr;
+        let compilation_error = process.wait_with_output().await?.stderr;
 
         if !compilation_error.is_empty() {
             return Err(Error::Compilation {

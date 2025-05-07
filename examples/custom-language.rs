@@ -18,7 +18,7 @@ pub const CPP: Language = Language {
 
 #[tokio::main]
 async fn main() {
-    let code = r#"
+    let code = br#"
         #include <bits/stdc++.h>
 
         using namespace std;
@@ -38,7 +38,7 @@ async fn main() {
         i64::MAX,
     )
     .unwrap();
-    let metrics = runner.run("Hello").await.unwrap();
+    let metrics = runner.run(b"Hello").await.unwrap();
 
     println!("{:#?}", metrics);
 }

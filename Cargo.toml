@@ -1,6 +1,6 @@
 [package]
 name = "code-executor"
-version = "2.4.1"
+version = "2.4.2"
 edition = "2024"
 license = "MIT"
 readme = "README.md"

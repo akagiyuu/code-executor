@@ -8,6 +8,7 @@ mod util;
 pub use compiler::Compiler;
 pub use error::*;
 pub use language::*;
+pub use metrics::Metrics;
 pub use runner::Runner;
 
 #[derive(Debug, Clone, Copy, Hash)]

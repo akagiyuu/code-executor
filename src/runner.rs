@@ -16,10 +16,10 @@ use crate::{CommandArgs, Result, metrics::Metrics};
 
 #[derive(Debug)]
 pub struct Runner<'a> {
-    args: CommandArgs<'a>,
-    project_path: &'a Path,
-    time_limit: Duration,
-    cgroup: Cgroup,
+    pub args: CommandArgs<'a>,
+    pub project_path: &'a Path,
+    pub time_limit: Duration,
+    pub cgroup: Cgroup,
 }
 
 impl<'a> Runner<'a> {

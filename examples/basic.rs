@@ -22,6 +22,7 @@ async fn main() {
         &project_path,
         Duration::from_secs(2),
         i64::MAX,
+        256,
     )
     .unwrap();
     let metrics = runner.run(b"Hello").await.unwrap();

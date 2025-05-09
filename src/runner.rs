@@ -17,14 +17,17 @@ use tokio::{
 use crate::{CommandArgs, Error, Result, metrics::Metrics};
 
 #[cached(result = true)]
-fn create_cgroup(memory_limit: i64) -> Result<Cgroup> {
-    let cgroup_name = format!("runner/{}", memory_limit);
+fn create_cgroup(memory_limit: i64, process_count_limit: usize) -> Result<Cgroup> {
+    let cgroup_name = format!("runner/{}-{}", memory_limit, process_count_limit);
     let hier = hierarchies::auto();
     let cgroup = CgroupBuilder::new(&cgroup_name)
         .memory()
         .memory_swap_limit(memory_limit)
         .memory_soft_limit(memory_limit)
         .memory_hard_limit(memory_limit)
+        .done()
+        .pid()
+        .maximum_number_of_processes(cgroups_rs::MaxValue::Value(process_count_limit as i64))
         .done()
         .build(hier)?;
 
@@ -46,8 +49,9 @@ impl<'a> Runner<'a> {
         project_path: &'a Path,
         time_limit: Duration,
         memory_limit: i64,
+        process_count_limit: usize,
     ) -> Result<Self> {
-        let cgroup = create_cgroup(memory_limit)?;
+        let cgroup = create_cgroup(memory_limit, process_count_limit)?;
 
         Ok(Self {
             args,

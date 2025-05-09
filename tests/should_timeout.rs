@@ -57,5 +57,5 @@ async fn should_output_correct(#[values(CPP, RUST, JAVA, PYTHON)] language: Lang
     )
     .unwrap();
 
-    assert_matches!(runner.run(b"").await, Err(Error::Timeout));
+    assert_matches!(runner.run(b"").await, Err(Error::Timeout { .. }));
 }

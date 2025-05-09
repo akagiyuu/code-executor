@@ -118,7 +118,15 @@ impl<'a> Runner<'a> {
                 child.kill().await?;
                 child.wait().await?;
 
-                Err(Error::Timeout)
+                let (stdout, stderr) = tokio::try_join! {
+                    stdout_observer,
+                    stderr_observer
+                }?;
+
+                Err(Error::Timeout {
+                    stdout,
+                    stderr
+                })
             }
         }
     }

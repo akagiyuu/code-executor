@@ -1,6 +1,7 @@
 use std::{
     path::Path,
     process::{self, Stdio},
+    sync::Arc,
     time::Duration,
 };
 
@@ -34,7 +35,7 @@ pub struct Runner<'a> {
     pub args: CommandArgs<'a>,
     pub project_path: &'a Path,
     pub time_limit: Duration,
-    pub cgroup: Cgroup,
+    pub cgroup: Arc<Cgroup>,
 }
 
 impl<'a> Runner<'a> {
@@ -50,7 +51,7 @@ impl<'a> Runner<'a> {
         Ok(Self {
             args,
             project_path,
-            cgroup,
+            cgroup: Arc::new(cgroup),
             time_limit,
         })
     }

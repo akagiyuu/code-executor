@@ -1,5 +1,3 @@
-use tokio::time::error::Elapsed;
-
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
@@ -11,7 +9,7 @@ pub enum Error {
     Runtime { message: String },
 
     #[error("The process exceed time limit")]
-    Timeout,
+    Timeout { stdout: Vec<u8>, stderr: Vec<u8> },
 
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
@@ -32,11 +30,5 @@ impl From<libseccomp::error::SeccompError> for Error {
 impl From<cgroups_rs::error::Error> for Error {
     fn from(error: cgroups_rs::error::Error) -> Self {
         Self::IO(std::io::Error::other(error))
-    }
-}
-
-impl From<Elapsed> for Error {
-    fn from(_: Elapsed) -> Self {
-        Self::Timeout
     }
 }

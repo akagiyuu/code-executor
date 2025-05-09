@@ -116,6 +116,9 @@ impl<'a> Runner<'a> {
                 })
             }
             _ = sleep(self.time_limit) => {
+                child.kill().await?;
+                child.wait().await?;
+
                 Err(Error::Timeout)
             }
         }

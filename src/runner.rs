@@ -14,6 +14,20 @@ use tokio::{
 
 use crate::{CommandArgs, Result, metrics::Metrics};
 
+fn create_cgroup(memory_limit: i64) -> Result<Cgroup> {
+    let cgroup_name = format!("runner/{}", memory_limit);
+    let hier = hierarchies::auto();
+    let cgroup = CgroupBuilder::new(&cgroup_name)
+        .memory()
+        .memory_swap_limit(memory_limit)
+        .memory_soft_limit(memory_limit)
+        .memory_hard_limit(memory_limit)
+        .done()
+        .build(hier)?;
+
+    Ok(cgroup)
+}
+
 #[derive(Debug)]
 pub struct Runner<'a> {
     pub args: CommandArgs<'a>,
@@ -30,17 +44,7 @@ impl<'a> Runner<'a> {
         time_limit: Duration,
         memory_limit: i64,
     ) -> Result<Self> {
-        let mut hasher = DefaultHasher::new();
-        (args, memory_limit, time_limit).hash(&mut hasher);
-        let cgroup_name = format!("runner/{}", hasher.finish());
-        let hier = hierarchies::auto();
-        let cgroup = CgroupBuilder::new(&cgroup_name)
-            .memory()
-            .memory_swap_limit(memory_limit)
-            .memory_soft_limit(memory_limit)
-            .memory_hard_limit(memory_limit)
-            .done()
-            .build(hier)?;
+        let cgroup = create_cgroup(memory_limit)?;
 
         Ok(Self {
             args,

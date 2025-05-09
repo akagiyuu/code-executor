@@ -11,6 +11,7 @@ A library designed for the backend of competitive programming platforms
 """
 
 [dependencies]
+cached = "0.55.1"
 cgroups-rs = "0.3.4"
 libseccomp = "0.4.0"
 state-shift = "2.1.1"

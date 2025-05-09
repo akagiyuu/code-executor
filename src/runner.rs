@@ -1,10 +1,10 @@
 use std::{
-    hash::{DefaultHasher, Hash, Hasher},
     path::Path,
     process::{self, Stdio},
     time::Duration,
 };
 
+use cached::proc_macro::cached;
 use cgroups_rs::{Cgroup, CgroupPid, cgroup_builder::CgroupBuilder, hierarchies};
 use tokio::{
     io::AsyncWriteExt,
@@ -14,6 +14,7 @@ use tokio::{
 
 use crate::{CommandArgs, Result, metrics::Metrics};
 
+#[cached(result = true)]
 fn create_cgroup(memory_limit: i64) -> Result<Cgroup> {
     let cgroup_name = format!("runner/{}", memory_limit);
     let hier = hierarchies::auto();

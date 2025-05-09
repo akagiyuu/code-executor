@@ -13,7 +13,7 @@ pub struct Compiler<'a> {
 impl Compiler<'_> {
     #[tracing::instrument(err)]
     async fn create_project(&self, code: &[u8]) -> Result<PathBuf> {
-        let project_path = util::generate_unique_path(code);
+        let project_path = util::generate_unique_path();
 
         fs::create_dir_all(&project_path).await?;
 

@@ -11,8 +11,7 @@ use cgroups_rs::{Cgroup, CgroupPid, cgroup_builder::CgroupBuilder, hierarchies};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     process::Command,
-    task::JoinSet,
-    time::{Instant, sleep, timeout},
+    time::{Instant, sleep},
 };
 
 use crate::{CommandArgs, Error, Result, metrics::Metrics};

@@ -1,4 +1,5 @@
 use std::{
+    io,
     path::Path,
     process::{self, Stdio},
     sync::Arc,
@@ -8,12 +9,13 @@ use std::{
 use cached::proc_macro::cached;
 use cgroups_rs::{Cgroup, CgroupPid, cgroup_builder::CgroupBuilder, hierarchies};
 use tokio::{
-    io::AsyncWriteExt,
+    io::{AsyncReadExt, AsyncWriteExt},
     process::Command,
-    time::{Instant, timeout},
+    task::JoinSet,
+    time::{Instant, sleep, timeout},
 };
 
-use crate::{CommandArgs, Result, metrics::Metrics};
+use crate::{CommandArgs, Error, Result, metrics::Metrics};
 
 #[cached(result = true)]
 fn create_cgroup(memory_limit: i64) -> Result<Cgroup> {
@@ -78,17 +80,44 @@ impl<'a> Runner<'a> {
         };
         let start = Instant::now();
         let mut child = child.spawn()?;
+        let mut stdin = child.stdin.take().unwrap();
+        let mut stdout = child.stdout.take().unwrap();
+        let mut stderr = child.stderr.take().unwrap();
 
-        let child_stdin = child.stdin.as_mut().unwrap();
-        child_stdin.write_all(input).await?;
+        let stdout_observer = async move {
+            let mut buffer = Vec::new();
+            stdout.read_to_end(&mut buffer).await?;
 
-        let output = timeout(self.time_limit, child.wait_with_output()).await??;
+            Ok::<_, io::Error>(buffer)
+        };
+        let stderr_observer = async move {
+            let mut buffer = Vec::new();
+            stderr.read_to_end(&mut buffer).await?;
+            Ok::<_, io::Error>(buffer)
+        };
 
-        Ok(Metrics {
-            run_time: start.elapsed(),
-            exit_status: output.status,
-            stdout: output.stdout,
-            stderr: output.stderr,
-        })
+        tokio::select! {
+            exit_status = async {
+                stdin.write_all(input).await?;
+                let exit_status = child.wait().await?;
+
+                Ok::<_, io::Error>(exit_status)
+            } => {
+                let (stdout, stderr) = tokio::try_join! {
+                    stdout_observer,
+                    stderr_observer
+                }?;
+
+                Ok(Metrics {
+                    exit_status: exit_status?,
+                    stdout,
+                    stderr,
+                    run_time: start.elapsed()
+                })
+            }
+            _ = sleep(self.time_limit) => {
+                Err(Error::Timeout)
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ state-shift = "2.1.1"
 thiserror = "2.0.9"
 tokio = { version = "1.44.2", features = ["full"] }
 tracing = "0.1.41"
+uuid = { version = "1.16.0", features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 bstr = "1.12.0"

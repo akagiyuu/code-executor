@@ -1,24 +1,12 @@
 use std::env;
-use std::hash::{DefaultHasher, Hash, Hasher as _};
 use std::path::PathBuf;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub fn hash<T>(obj: T) -> u64
-where
-    T: Hash,
-{
-    let mut hasher = DefaultHasher::new();
-    obj.hash(&mut hasher);
-    hasher.finish()
-}
+use uuid::Uuid;
 
-pub fn generate_unique_path(code: &[u8]) -> PathBuf {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::from_secs(0));
-    let unique_id = hash((now, code)).to_string();
+pub fn generate_unique_path() -> PathBuf {
+    let id = Uuid::new_v4().to_string();
     let mut path = env::temp_dir();
-    path.push(unique_id);
+    path.push(id);
 
     path
 }

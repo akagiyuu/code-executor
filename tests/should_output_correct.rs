@@ -23,6 +23,7 @@ async fn should_output_correct(
         &project_path,
         Duration::from_secs(2),
         i64::MAX,
+        512,
     )
     .unwrap();
     for test_case in problem.test_cases {

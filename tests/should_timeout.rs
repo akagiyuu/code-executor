@@ -54,6 +54,7 @@ async fn should_output_correct(#[values(CPP, RUST, JAVA, PYTHON)] language: Lang
         &project_path,
         Duration::from_secs(2),
         i64::MAX,
+        512,
     )
     .unwrap();
 

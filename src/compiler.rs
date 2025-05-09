@@ -4,7 +4,7 @@ use tokio::{fs, io::AsyncWriteExt, process::Command};
 
 use crate::{CommandArgs, Error, Result, util};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Compiler<'a> {
     pub main_file: &'a str,
     pub args: Option<CommandArgs<'a>>,

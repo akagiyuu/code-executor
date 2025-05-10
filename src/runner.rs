@@ -14,7 +14,7 @@ use tokio::{
     time::{Instant, sleep},
 };
 
-use crate::{CommandArgs, Error, Result, metrics::Metrics};
+use crate::{CommandArgs, ExitStatus, Result, metrics::Metrics};
 
 #[cached(result = true)]
 fn create_cgroup(memory_limit: i64, process_count_limit: usize) -> Result<Cgroup> {
@@ -99,39 +99,30 @@ impl<'a> Runner<'a> {
             Ok::<_, io::Error>(buffer)
         };
 
-        tokio::select! {
+        let exit_status = tokio::select! {
             exit_status = async {
                 stdin.write_all(input).await?;
                 let exit_status = child.wait().await?;
 
                 Ok::<_, io::Error>(exit_status)
             } => {
-                let (stdout, stderr) = tokio::try_join! {
-                    stdout_observer,
-                    stderr_observer
-                }?;
-
-                Ok(Metrics {
-                    exit_status: exit_status?,
-                    stdout,
-                    stderr,
-                    run_time: start.elapsed()
-                })
+                exit_status.map(|raw| raw.into())
             }
             _ = sleep(self.time_limit) => {
                 child.kill().await?;
                 child.wait().await?;
 
-                let (stdout, stderr) = tokio::try_join! {
-                    stdout_observer,
-                    stderr_observer
-                }?;
-
-                Err(Error::Timeout {
-                    stdout,
-                    stderr
-                })
+                Ok(ExitStatus::Timeout)
             }
-        }
+        }?;
+
+        let (stdout, stderr) = tokio::try_join!(stdout_observer, stderr_observer)?;
+
+        Ok(Metrics {
+            exit_status,
+            stdout,
+            stderr,
+            run_time: start.elapsed(),
+        })
     }
 }

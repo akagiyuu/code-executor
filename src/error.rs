@@ -5,12 +5,6 @@ pub enum Error {
     #[error("Compilation error: {message}")]
     Compilation { message: String },
 
-    #[error("Runtime error: {message}")]
-    Runtime { message: String },
-
-    #[error("The process exceed time limit")]
-    Timeout { stdout: Vec<u8>, stderr: Vec<u8> },
-
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
 }

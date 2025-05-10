@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use assert_matches::assert_matches;
 use code_executor::*;
 use rstest::rstest;
 
@@ -58,5 +57,7 @@ async fn should_output_correct(#[values(CPP, RUST, JAVA, PYTHON)] language: Lang
     )
     .unwrap();
 
-    assert_matches!(runner.run(b"").await, Err(Error::Timeout { .. }));
+    let metrics = runner.run(b"").await.unwrap();
+
+    assert_eq!(metrics.exit_status, ExitStatus::Timeout)
 }

@@ -7,16 +7,13 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
+
+    #[error("Failed to create cgroup: {0}")]
+    Cgroup(#[from] cgroups_rs::error::Error),
 }
 
 impl From<std::string::FromUtf8Error> for Error {
     fn from(error: std::string::FromUtf8Error) -> Self {
         Error::IO(std::io::Error::other(error))
-    }
-}
-
-impl From<cgroups_rs::error::Error> for Error {
-    fn from(error: cgroups_rs::error::Error) -> Self {
-        Self::IO(std::io::Error::other(error))
     }
 }

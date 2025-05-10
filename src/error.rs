@@ -15,12 +15,6 @@ impl From<std::string::FromUtf8Error> for Error {
     }
 }
 
-impl From<libseccomp::error::SeccompError> for Error {
-    fn from(error: libseccomp::error::SeccompError) -> Self {
-        Self::IO(std::io::Error::other(error.to_string()))
-    }
-}
-
 impl From<cgroups_rs::error::Error> for Error {
     fn from(error: cgroups_rs::error::Error) -> Self {
         Self::IO(std::io::Error::other(error))

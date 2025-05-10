@@ -5,11 +5,11 @@ mod metrics;
 mod runner;
 mod util;
 
-pub use compiler::Compiler;
+pub use compiler::*;
 pub use error::*;
 pub use language::*;
-pub use metrics::Metrics;
-pub use runner::Runner;
+pub use metrics::*;
+pub use runner::*;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct CommandArgs<'a> {

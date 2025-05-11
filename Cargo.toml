@@ -13,8 +13,8 @@ A library designed for the backend of competitive programming platforms
 [dependencies]
 cached = "0.55.1"
 cgroups-rs = "0.3.4"
-thiserror = "2.0.9"
-tokio = { version = "1.44.2", features = ["full"] }
+thiserror = "2.0.12"
+tokio = { version = "1.45.0", features = ["full"] }
 tracing = "0.1.41"
 uuid = { version = "1.16.0", features = ["v4", "fast-rng"] }
 

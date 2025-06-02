@@ -11,7 +11,7 @@ use util::{Problem, read_code};
 #[tokio::test]
 async fn should_output_correct(
     #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
-    #[files("tests/problem/*")] problem_path: PathBuf,
+    #[files("tests/data/problem/*")] problem_path: PathBuf,
 ) {
     let problem: Problem = problem_path.as_path().into();
 

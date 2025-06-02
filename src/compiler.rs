@@ -60,3 +60,40 @@ impl Compiler<'_> {
         Ok(project_path)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use bstr::ByteSlice;
+    use rstest::rstest;
+
+    use crate::{CPP, JAVA, Language, PYTHON, RUST, test::read_code};
+
+    const EXAMPLE_CODE_DIR: &str = "tests/data/timeout";
+
+    #[rstest]
+    #[tokio::test]
+    async fn should_create_valid_project_directory(
+        #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
+    ) {
+        let code = read_code(language, Path::new(EXAMPLE_CODE_DIR));
+        let project_path = language
+            .compiler
+            .create_project(code.as_bytes())
+            .await
+            .unwrap();
+        let main_path = project_path.join(language.compiler.main_file);
+
+        assert!(main_path.exists())
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn should_compile_successfully(
+        #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
+    ) {
+        let code = read_code(language, Path::new(EXAMPLE_CODE_DIR));
+        assert!(language.compiler.compile(code.as_bytes()).await.is_ok());
+    }
+}

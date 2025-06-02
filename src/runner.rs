@@ -126,3 +126,66 @@ impl<'a> Runner<'a> {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::{
+        path::{Path, PathBuf},
+        time::Duration,
+    };
+
+    use bstr::ByteSlice;
+    use rstest::rstest;
+
+    use crate::{
+        CPP, ExitStatus, JAVA, Language, PYTHON, RUST, Runner,
+        test::{read_code, read_test_cases},
+    };
+
+    #[rstest]
+    #[tokio::test]
+    async fn should_output_correct(
+        #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
+        #[files("tests/data/problem/*")] problem_path: PathBuf,
+    ) {
+        let test_cases = read_test_cases(&problem_path);
+
+        let code = read_code(language, &problem_path);
+        let project_path = language.compiler.compile(&code).await.unwrap();
+
+        let runner = Runner::new(
+            language.runner_args,
+            &project_path,
+            Duration::from_secs(2),
+            i64::MAX,
+            512,
+        )
+        .unwrap();
+        for (input, output) in test_cases {
+            let metrics = runner.run(&input).await.unwrap();
+            let metrics_out = metrics.stdout.trim();
+            let test_case_out = output.trim();
+            assert_eq!(metrics_out, test_case_out);
+        }
+    }
+
+    #[rstest]
+    #[tokio::test]
+    async fn should_timeout(#[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>) {
+        let code = read_code(language, Path::new("tests/data/timeout"));
+        let project_path = language.compiler.compile(code.as_bytes()).await.unwrap();
+
+        let runner = Runner::new(
+            language.runner_args,
+            &project_path,
+            Duration::from_secs(2),
+            i64::MAX,
+            512,
+        )
+        .unwrap();
+
+        let metrics = runner.run(b"").await.unwrap();
+
+        assert_eq!(metrics.exit_status, ExitStatus::Timeout)
+    }
+}

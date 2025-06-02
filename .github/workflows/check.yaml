@@ -56,6 +56,6 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config rustc
-      - name: Integration test
+      - name: Run test
         run: |
           cargo test --target ${{ matrix.target }}

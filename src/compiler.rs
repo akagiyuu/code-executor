@@ -92,6 +92,6 @@ mod test {
         #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
     ) {
         let code = read_code(language, Path::new(EXAMPLE_CODE_DIR));
-        assert!(language.compiler.compile(code.as_bytes()).await.ok());
+        assert!(language.compiler.compile(code.as_bytes()).await.is_ok());
     }
 }

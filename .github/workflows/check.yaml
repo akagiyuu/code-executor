@@ -2,14 +2,8 @@ on:
   workflow_dispatch:
   push:
     branches: main
-    paths-ignore:
-      - "**.md"
-      - ".github/**"
   pull_request:
     branches: main
-    paths-ignore:
-      - "**.md"
-      - ".github/**"
 
 permissions:
   contents: read
@@ -20,42 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy, rustfmt
+      - name: Install toolchain
+        run: rustup toolchain install stable --profile minimal --no-self-update
       - uses: Swatinem/rust-cache@v2
       - name: Check Clippy
         run: cargo clippy --workspace -- -D warnings
       - name: Check rustfmt
         run: cargo fmt --all -- --check
 
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            toolchain: stable
-
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            toolchain: nightly
+  Test:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          target: ${{ matrix.target }}
-          toolchain: ${{ matrix.toolchain }}
-      - run: ${{ matrix.deps }}
+        run: rustup toolchain install stable --profile minimal --no-self-update
       - uses: Swatinem/rust-cache@v2
       - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: openjdk-8-jdk build-essential python3 python-is-python3 libseccomp-dev libgbm-dev libxkbcommon-x11-0 pkg-config rustc
-      - name: Integration test
-        run: |
-          cargo test --target ${{ matrix.target }}
+      - name: Run test
+        run: cargo test

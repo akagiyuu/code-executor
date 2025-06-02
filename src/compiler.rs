@@ -63,9 +63,7 @@ impl Compiler<'_> {
 
 #[cfg(test)]
 mod test {
-    use std::
-        path::Path
-    ;
+    use std::path::Path;
 
     use bstr::ByteSlice;
     use rstest::rstest;
@@ -80,7 +78,11 @@ mod test {
         #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
     ) {
         let code = read_code(language, Path::new(EXAMPLE_CODE_DIR));
-        let project_path = language.compiler.create_project(code.as_bytes()).await.unwrap();
+        let project_path = language
+            .compiler
+            .create_project(code.as_bytes())
+            .await
+            .unwrap();
         let main_path = project_path.join(language.compiler.main_file);
 
         assert!(main_path.exists())

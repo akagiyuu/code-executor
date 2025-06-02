@@ -1,51 +1,17 @@
-use std::time::Duration;
+mod util;
 
+use std::{path::Path, time::Duration};
+
+use bstr::ByteSlice;
 use code_executor::*;
 use rstest::rstest;
 
-fn get_timeout_code(language: Language<'static>) -> &'static str {
-    match language {
-        CPP => {
-            r#"
-#include <bits/stdc++.h>
-
-using namespace std;
-
-int main() {
-    while(true) {}
-}
-        "#
-        }
-        RUST => {
-            r#"
-fn main() {
-    loop {}
-}
-        "#
-        }
-        JAVA => {
-            r#"
-class Main {
-    public static void main(String[] args) {
-        while(true) {}
-    }
-}
-        "#
-        }
-        PYTHON => {
-            r#"
-while True:
-    continue
-        "#
-        }
-        _ => unreachable!(),
-    }
-}
+use util::read_code;
 
 #[rstest]
 #[tokio::test]
 async fn should_timeout(#[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>) {
-    let code = get_timeout_code(language);
+    let code = read_code(language, Path::new("tests/data/timeout"));
     let project_path = language.compiler.compile(code.as_bytes()).await.unwrap();
 
     let runner = Runner::new(

@@ -126,3 +126,43 @@ impl<'a> Runner<'a> {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::{path::PathBuf, time::Duration};
+
+    use bstr::ByteSlice;
+    use rstest::rstest;
+
+    use crate::{
+        CPP, JAVA, Language, PYTHON, RUST, Runner,
+        test::{read_code, read_test_cases},
+    };
+
+    #[rstest]
+    #[tokio::test]
+    async fn test_code_run_should_output_correct(
+        #[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>,
+        #[files("tests/problem/*")] problem_path: PathBuf,
+    ) {
+        let test_cases = read_test_cases(&problem_path);
+
+        let code = read_code(language, &problem_path);
+        let project_path = language.compiler.compile(&code).await.unwrap();
+
+        let runner = Runner::new(
+            language.runner_args,
+            &project_path,
+            Duration::from_secs(2),
+            i64::MAX,
+            512,
+        )
+        .unwrap();
+        for (input, output) in test_cases {
+            let metrics = runner.run(&input).await.unwrap();
+            let metrics_out = metrics.stdout.trim();
+            let test_case_out = output.trim();
+            assert_eq!(metrics_out, test_case_out);
+        }
+    }
+}

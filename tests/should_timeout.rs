@@ -44,7 +44,7 @@ while True:
 
 #[rstest]
 #[tokio::test]
-async fn should_output_correct(#[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>) {
+async fn should_timeout(#[values(CPP, RUST, JAVA, PYTHON)] language: Language<'static>) {
     let code = get_timeout_code(language);
     let project_path = language.compiler.compile(code.as_bytes()).await.unwrap();
 

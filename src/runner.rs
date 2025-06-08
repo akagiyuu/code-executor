@@ -88,7 +88,7 @@ impl<'a> Runner<'a> {
         let mut stderr = child.stderr.take().unwrap();
 
         let stdout_observer = async move {
-            let mut buffer = Vec::new();
+            let mut buffer = vec![97];
             stdout.read_to_end(&mut buffer).await?;
 
             Ok::<_, io::Error>(buffer)
